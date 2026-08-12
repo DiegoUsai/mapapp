@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- Autenticazione (Auth.js / NextAuth) ---
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// --- Dominio applicativo ---
+
+model Domain {
+  id           String        @id @default(cuid())
+  name         String
+  color        String        @default("#3E5C76")
+  applications Application[]
+  createdAt    DateTime      @default(now())
+}
+
+model Vendor {
+  id        String     @id @default(cuid())
+  name      String
+  contracts Contract[]
+  createdAt DateTime   @default(now())
+}
+
+model Contract {
+  id           String        @id @default(cuid())
+  name         String
+  vendorId     String
+  vendor       Vendor        @relation(fields: [vendorId], references: [id])
+  startDate    DateTime?
+  endDate      DateTime?
+  applications Application[]
+  createdAt    DateTime      @default(now())
+}
+
+model IntegrationType {
+  id           String        @id @default(cuid())
+  name         String
+  color        String        @default("#2F6F76")
+  integrations Integration[]
+  createdAt    DateTime      @default(now())
+}
+
+model Application {
+  id               String        @id @default(cuid())
+  name             String
+  domainId         String
+  domain           Domain        @relation(fields: [domainId], references: [id])
+  contractId       String?
+  contract         Contract?     @relation(fields: [contractId], references: [id])
+  requirements     Requirement[]
+  integrationsFrom Integration[] @relation("IntegrationFrom")
+  integrationsTo   Integration[] @relation("IntegrationTo")
+  createdAt        DateTime      @default(now())
+}
+
+model Requirement {
+  id             String        @id @default(cuid())
+  applicationId  String
+  application    Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  name           String
+  status         String        @default("backlog") // presente | in-sviluppo | backlog
+  externalId     String?
+  externalSystem String?
+  sharedWith     Requirement[] @relation("SharedRequirements")
+  sharedBy       Requirement[] @relation("SharedRequirements")
+  createdAt      DateTime      @default(now())
+}
+
+model Integration {
+  id     String          @id @default(cuid())
+  fromId String
+  from   Application     @relation("IntegrationFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  toId   String
+  to     Application     @relation("IntegrationTo", fields: [toId], references: [id], onDelete: Cascade)
+  typeId String
+  type   IntegrationType @relation(fields: [typeId], references: [id])
+  label  String
+}
