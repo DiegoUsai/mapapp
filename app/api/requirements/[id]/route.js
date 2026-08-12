@@ -14,6 +14,10 @@ export async function PATCH(req, { params }) {
 
 export async function DELETE(_req, { params }) {
   const { id } = await params;
-  await prisma.requirement.delete({ where: { id } });
+  try {
+    await prisma.requirement.delete({ where: { id } });
+  } catch (err) {
+    if (err.code !== "P2025") throw err;
+  }
   return NextResponse.json({ ok: true });
 }

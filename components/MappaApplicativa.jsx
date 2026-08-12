@@ -286,7 +286,7 @@ function integrationsFor(integrations, appId) {
   return { outgoing: integrations.filter((i) => i.fromId === appId), incoming: integrations.filter((i) => i.toId === appId) };
 }
 
-function AppDetailPanel({ app, apps, integrations, integrationTypes, onJump, onClose, onDeleteApp, onDeleteFeature, onDeleteIntegration, onAddFeature, onAddIntegration, onAddIntegrationType }) {
+function AppDetailPanel({ app, apps, integrations, integrationTypes, onJump, onClose, onDeleteApp, onDeleteFeature, onDeleteIntegration, onAddFeature, onAddIntegration, onAddIntegrationType, saving }) {
   const { outgoing, incoming } = integrationsFor(integrations, app.id);
   const hasIntegrations = outgoing.length > 0 || incoming.length > 0;
   const [modal, setModal] = useState(null);
@@ -306,7 +306,7 @@ function AppDetailPanel({ app, apps, integrations, integrationTypes, onJump, onC
                   <span className="shrink-0 text-[10.5px] font-semibold uppercase tracking-wide">{i.type.name}</span>
                   Si integra con «{t.name}» — {i.label}
                 </button>
-                <button onClick={() => onDeleteIntegration(i.id)} className="shrink-0 p-1"><Trash2 size={13} style={{ color: "#B5B0A3" }} /></button>
+                <button onClick={() => onDeleteIntegration(i.id)} disabled={saving} className="shrink-0 p-1 disabled:opacity-50"><Trash2 size={13} style={{ color: "#B5B0A3" }} /></button>
               </div>
             );
           })}
@@ -320,7 +320,7 @@ function AppDetailPanel({ app, apps, integrations, integrationTypes, onJump, onC
                   <span className="shrink-0 text-[10.5px] font-semibold uppercase tracking-wide">{i.type.name}</span>
                   Usato da «{s.name}» — {i.label}
                 </button>
-                <button onClick={() => onDeleteIntegration(i.id)} className="shrink-0 p-1"><Trash2 size={13} style={{ color: "#B5B0A3" }} /></button>
+                <button onClick={() => onDeleteIntegration(i.id)} disabled={saving} className="shrink-0 p-1 disabled:opacity-50"><Trash2 size={13} style={{ color: "#B5B0A3" }} /></button>
               </div>
             );
           })}
@@ -334,7 +334,7 @@ function AppDetailPanel({ app, apps, integrations, integrationTypes, onJump, onC
               <span className="text-[13.5px]" style={{ color: "#232019" }}>{f.name}</span>
               <div className="flex items-center gap-2">
                 <StatusPill status={f.status} />
-                <button onClick={() => onDeleteFeature(f.id)}><Trash2 size={13} style={{ color: "#B5B0A3" }} /></button>
+                <button onClick={() => onDeleteFeature(f.id)} disabled={saving} className="disabled:opacity-50"><Trash2 size={13} style={{ color: "#B5B0A3" }} /></button>
               </div>
             </div>
             {f.externalId && (
@@ -358,7 +358,7 @@ function AppDetailPanel({ app, apps, integrations, integrationTypes, onJump, onC
       <div className="mt-3 flex flex-wrap gap-2">
         <button onClick={() => setModal("feature")} className="flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-[12.5px] font-medium" style={{ borderColor: "#D8D5CC", color: "#3D3A34" }}><Plus size={13} /> Requisito</button>
         <button onClick={() => setModal("integration")} className="flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-[12.5px] font-medium" style={{ borderColor: "#D8D5CC", color: "#3D3A34" }}><Plus size={13} /> Integrazione</button>
-        <button onClick={() => onDeleteApp(app.id)} className="ml-auto flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium" style={{ color: "#B5482B" }}><Trash2 size={13} /> Elimina applicativo</button>
+        <button onClick={() => onDeleteApp(app.id)} disabled={saving} className="ml-auto flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[12.5px] font-medium disabled:opacity-50" style={{ color: "#B5482B" }}><Trash2 size={13} /> Elimina applicativo</button>
       </div>
 
       {onClose && <button onClick={onClose} className="mt-4 flex items-center gap-1 text-[12.5px] font-medium" style={{ color: "#8A8578" }}><X size={12} /> Chiudi dettaglio</button>}
@@ -461,7 +461,7 @@ function RelationMap({ apps, integrations, integrationTypes, selected, onSelect,
               {contractLabel(selectedApp.contract)}
             </div>
           </div>
-          <AppDetailPanel app={selectedApp} integrations={integrations} integrationTypes={integrationTypes} onClose={() => onSelect(null)} {...panelProps} />
+          <AppDetailPanel app={selectedApp} apps={apps} integrations={integrations} integrationTypes={integrationTypes} onClose={() => onSelect(null)} {...panelProps} />
         </div>
       )}
     </div>
@@ -693,6 +693,7 @@ export default function MappaApplicativa({ userEmail }) {
   const panelProps = {
     apps: data.applications,
     onJump: jumpTo,
+    saving,
     onDeleteApp: deleteApp,
     onDeleteFeature: deleteFeature,
     onDeleteIntegration: deleteIntegration,
