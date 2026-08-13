@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withAuth } from "@/lib/auth-guard";
 
-export async function POST(req) {
+export const POST = withAuth(async (req) => {
   const body = await req.json();
   const integration = await prisma.integration.create({
     data: {
@@ -11,4 +12,4 @@ export async function POST(req) {
     include: { type: true, fromModule: true, toModule: true },
   });
   return NextResponse.json(integration);
-}
+});

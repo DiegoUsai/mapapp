@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withAuth } from "@/lib/auth-guard";
 
-export async function POST(req) {
+export const POST = withAuth(async (req) => {
   const body = await req.json();
   const requirement = await prisma.requirement.create({
     data: {
@@ -16,4 +17,4 @@ export async function POST(req) {
     include: { sharedWith: true, module: true },
   });
   return NextResponse.json(requirement);
-}
+});

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withAuth } from "@/lib/auth-guard";
 
-export async function GET() {
+export const GET = withAuth(async () => {
   const apps = await prisma.application.findMany({
     include: {
       domain: true,
@@ -12,9 +13,9 @@ export async function GET() {
     orderBy: { createdAt: "asc" },
   });
   return NextResponse.json(apps);
-}
+});
 
-export async function POST(req) {
+export const POST = withAuth(async (req) => {
   const body = await req.json();
   const app = await prisma.application.create({
     data: {
@@ -25,4 +26,4 @@ export async function POST(req) {
     include: { domain: true, contracts: { include: { vendor: true } }, modules: true, requirements: true },
   });
   return NextResponse.json(app);
-}
+});

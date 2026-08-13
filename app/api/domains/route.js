@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { withAuth } from "@/lib/auth-guard";
 
-export async function GET() {
+export const GET = withAuth(async () => {
   const domains = await prisma.domain.findMany({ orderBy: { createdAt: "asc" } });
   return NextResponse.json(domains);
-}
+});
 
-export async function POST(req) {
+export const POST = withAuth(async (req) => {
   const body = await req.json();
   const domain = await prisma.domain.create({
     data: {
@@ -18,4 +19,4 @@ export async function POST(req) {
     },
   });
   return NextResponse.json(domain);
-}
+});
