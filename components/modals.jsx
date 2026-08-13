@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Modal, Field, ComboAdd, inputClass, inputStyle, STATUS, DOMAIN_TYPES } from "./shared";
-import { COFOG_OPTIONS } from "@/lib/cofog";
+import { COFOG_OPTIONS, cofogCleanLabel } from "@/lib/cofog";
 
 export function RenameModal({ title, label, initialValue, placeholder, saveLabel = "Salva", onClose, onSave }) {
   const [name, setName] = useState(initialValue || "");
@@ -71,22 +71,36 @@ export function NewDomainModal({ initial, onClose, onSave }) {
   const [name, setName] = useState(initial?.name || "");
   const [type, setType] = useState(initial?.type || "verticale");
   const [cofogCode, setCofogCode] = useState(initial?.cofogCode || "");
-  const canSave = name.trim();
+  const [nameTouched, setNameTouched] = useState(false);
+  const canSave = Boolean(cofogCode) && name.trim();
+
+  const handleCofogChange = (newCode) => {
+    setCofogCode(newCode);
+    if (!nameTouched) {
+      setName(newCode ? cofogCleanLabel(newCode) : "");
+    }
+  };
+
+  const handleNameChange = (e) => {
+    setName(e.target.value);
+    setNameTouched(true);
+  };
+
   return (
     <Modal title={initial ? "Modifica dominio" : "Nuovo dominio"} onClose={onClose}>
       <div className="space-y-3">
+        <Field label="Classificazione COFOG">
+          <select value={cofogCode} onChange={(e) => handleCofogChange(e.target.value)} className={inputClass} style={inputStyle}>
+            <option value="">Seleziona una classificazione…</option>
+            {COFOG_OPTIONS.map((o) => <option key={o.code} value={o.code}>{o.label}</option>)}
+          </select>
+        </Field>
         <Field label="Nome dominio">
-          <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. Gestione documentale" />
+          <input value={name} onChange={handleNameChange} className={inputClass} style={inputStyle} placeholder="Es. Gestione documentale" />
         </Field>
         <Field label="Tipo">
           <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass} style={inputStyle}>
             {Object.entries(DOMAIN_TYPES).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
-          </select>
-        </Field>
-        <Field label="Classificazione COFOG (opzionale)">
-          <select value={cofogCode} onChange={(e) => setCofogCode(e.target.value)} className={inputClass} style={inputStyle}>
-            <option value="">Nessuna</option>
-            {COFOG_OPTIONS.map((o) => <option key={o.code} value={o.code}>{o.label}</option>)}
           </select>
         </Field>
         <button
@@ -100,7 +114,7 @@ export function NewDomainModal({ initial, onClose, onSave }) {
   );
 }
 
-export function NewAppModal({ domains, contracts, initial, onClose, onSave, onAddDomain, onOpenNewContract }) {
+export function NewAppModal({ domains, contracts, initial, onClose, onSave, onOpenNewDomain, onOpenNewContract }) {
   const [name, setName] = useState(initial?.name || "");
   const [domainId, setDomainId] = useState(initial?.domainId || domains[0]?.id || "");
   const [contractIds, setContractIds] = useState(initial?.contracts?.map((c) => c.id) || []);
@@ -113,7 +127,13 @@ export function NewAppModal({ domains, contracts, initial, onClose, onSave, onAd
           <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. Portale istanze online" />
         </Field>
         <Field label="Dominio">
-          <ComboAdd options={domains} value={domainId} onChange={setDomainId} onAddNew={onAddDomain} placeholder="Nome nuovo dominio" />
+          <select value={domainId} onChange={(e) => setDomainId(e.target.value)} className={inputClass} style={inputStyle}>
+            {domains.length === 0 && <option value="" disabled>Nessun dominio disponibile</option>}
+            {domains.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+          <button type="button" onClick={onOpenNewDomain} className="mt-1.5 flex items-center gap-1 text-[12.5px] font-medium underline underline-offset-2" style={{ color: "#6B655A" }}>
+            <Plus size={12} /> Nuovo dominio
+          </button>
         </Field>
         <Field label="Contratti">
           <div className="max-h-32 space-y-1 overflow-y-auto rounded-md border p-2" style={{ borderColor: "#D8D5CC" }}>

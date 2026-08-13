@@ -342,10 +342,6 @@ export default function MappaApplicativa({ userEmail }) {
     const color = TYPE_PALETTE[data.integrationTypes.length % TYPE_PALETTE.length];
     return createAndGetId("/api/integration-types", { name, color });
   };
-  const addDomainAsync = async (name) => {
-    const color = COLOR_PALETTE[data.domains.length % COLOR_PALETTE.length];
-    return createAndGetId("/api/domains", { name, color });
-  };
 
   const createContract = (payload) => withSaving(async () => { await api("/api/contracts", "POST", payload); setShowNewContract(false); });
   const createDomain = (payload) => withSaving(async () => {
@@ -358,6 +354,7 @@ export default function MappaApplicativa({ userEmail }) {
     setShowNewApp(false);
     setExpanded(app.id);
   });
+  const openNewDomain = () => { setShowNewApp(false); setShowNewDomain(true); };
 
   const deleteApp = (appId) => withSaving(async () => {
     await api(`/api/applications/${appId}`, "DELETE");
@@ -542,7 +539,7 @@ export default function MappaApplicativa({ userEmail }) {
 
       {showNewApp && (
         <NewAppModal domains={data.domains} contracts={data.contracts} onClose={() => setShowNewApp(false)} onSave={createApp}
-          onAddDomain={addDomainAsync} onOpenNewContract={() => { setShowNewApp(false); setShowNewContract(true); }} />
+          onOpenNewDomain={openNewDomain} onOpenNewContract={() => { setShowNewApp(false); setShowNewContract(true); }} />
       )}
       {showNewContract && <NewContractModal vendors={data.vendors} onClose={() => setShowNewContract(false)} onSave={createContract} onAddVendor={addVendor} />}
       {showNewDomain && <NewDomainModal onClose={() => setShowNewDomain(false)} onSave={createDomain} />}
