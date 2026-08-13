@@ -10,6 +10,10 @@ export async function PATCH(req, { params }) {
 
 export async function DELETE(_req, { params }) {
   const { id } = await params;
+  const count = await prisma.integration.count({ where: { typeId: id } });
+  if (count > 0) {
+    return NextResponse.json({ error: "Tipologia in uso da integrazioni collegate", count }, { status: 409 });
+  }
   try {
     await prisma.integrationType.delete({ where: { id } });
   } catch (err) {

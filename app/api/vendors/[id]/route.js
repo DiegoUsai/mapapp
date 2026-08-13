@@ -10,6 +10,10 @@ export async function PATCH(req, { params }) {
 
 export async function DELETE(_req, { params }) {
   const { id } = await params;
+  const count = await prisma.contract.count({ where: { vendorId: id } });
+  if (count > 0) {
+    return NextResponse.json({ error: "Fornitore in uso da contratti collegati", count }, { status: 409 });
+  }
   try {
     await prisma.vendor.delete({ where: { id } });
   } catch (err) {

@@ -6,7 +6,8 @@ export async function GET() {
     include: {
       domain: true,
       contracts: { include: { vendor: true } },
-      requirements: { include: { sharedWith: true } },
+      modules: { orderBy: { createdAt: "asc" } },
+      requirements: { include: { sharedWith: true, module: true } },
     },
     orderBy: { createdAt: "asc" },
   });
@@ -21,7 +22,7 @@ export async function POST(req) {
       domainId: body.domainId,
       contracts: { connect: (body.contractIds || []).map((id) => ({ id })) },
     },
-    include: { domain: true, contracts: { include: { vendor: true } }, requirements: true },
+    include: { domain: true, contracts: { include: { vendor: true } }, modules: true, requirements: true },
   });
   return NextResponse.json(app);
 }

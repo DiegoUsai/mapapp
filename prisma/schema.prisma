@@ -62,7 +62,6 @@ model Domain {
   color        String        @default("#3E5C76")
   type         String        @default("verticale") // verticale | trasversale-core
   cofogCode    String?
-  eurovocUri   String?
   applications Application[]
   createdAt    DateTime      @default(now())
 }
@@ -101,16 +100,30 @@ model Application {
   domainId         String
   domain           Domain        @relation(fields: [domainId], references: [id])
   contracts        Contract[]
+  modules          Module[]
   requirements     Requirement[]
   integrationsFrom Integration[] @relation("IntegrationFrom")
   integrationsTo   Integration[] @relation("IntegrationTo")
   createdAt        DateTime      @default(now())
 }
 
+model Module {
+  id                String        @id @default(cuid())
+  name              String
+  applicationId     String
+  application       Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  requirements      Requirement[]
+  integrationsFrom  Integration[] @relation("IntegrationFromModule")
+  integrationsTo    Integration[] @relation("IntegrationToModule")
+  createdAt         DateTime      @default(now())
+}
+
 model Requirement {
   id             String        @id @default(cuid())
   applicationId  String
   application    Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  moduleId       String?
+  module         Module?       @relation(fields: [moduleId], references: [id])
   name           String
   status         String        @default("backlog") // presente | in-sviluppo | backlog
   externalId     String?
@@ -121,13 +134,17 @@ model Requirement {
 }
 
 model Integration {
-  id     String          @id @default(cuid())
-  fromId String
-  from   Application     @relation("IntegrationFrom", fields: [fromId], references: [id], onDelete: Cascade)
-  toId   String
-  to     Application     @relation("IntegrationTo", fields: [toId], references: [id], onDelete: Cascade)
-  typeId String
-  type   IntegrationType @relation(fields: [typeId], references: [id])
-  status String          @default("backlog") // presente | in-sviluppo | backlog
-  label  String
+  id           String          @id @default(cuid())
+  fromId       String
+  from         Application     @relation("IntegrationFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  fromModuleId String?
+  fromModule   Module?         @relation("IntegrationFromModule", fields: [fromModuleId], references: [id])
+  toId         String
+  to           Application     @relation("IntegrationTo", fields: [toId], references: [id], onDelete: Cascade)
+  toModuleId   String?
+  toModule     Module?         @relation("IntegrationToModule", fields: [toModuleId], references: [id])
+  typeId       String
+  type         IntegrationType @relation(fields: [typeId], references: [id])
+  status       String          @default("backlog") // presente | in-sviluppo | backlog
+  label        String
 }

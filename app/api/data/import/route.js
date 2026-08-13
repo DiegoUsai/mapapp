@@ -10,7 +10,7 @@ export async function POST(req) {
 
   await prisma.$transaction(async (tx) => {
     for (const d of domains) {
-      const data = { name: d.name, color: d.color, type: d.type || "verticale", cofogCode: d.cofogCode || null, eurovocUri: d.eurovocUri || null };
+      const data = { name: d.name, color: d.color, type: d.type || "verticale", cofogCode: d.cofogCode || null };
       await tx.domain.upsert({ where: { id: d.id }, update: data, create: { id: d.id, ...data } });
     }
     for (const v of vendors) {
@@ -35,14 +35,25 @@ export async function POST(req) {
         create: { id: a.id, name: a.name, domainId: a.domainId, contracts: { connect: contractIds.map((id) => ({ id })) } },
       });
     }
+    // moduli (devono esistere prima dei requisiti che vi fanno riferimento)
+    for (const a of apps) {
+      for (const m of a.modules || []) {
+        await tx.module.upsert({
+          where: { id: m.id },
+          update: { name: m.name },
+          create: { id: m.id, name: m.name, applicationId: a.id },
+        });
+      }
+    }
     // prima passata: crea/aggiorna i requisiti senza i collegamenti condivisi
     for (const a of apps) {
       for (const r of a.requirements || []) {
-        await tx.requirement.upsert({
-          where: { id: r.id },
-          update: { name: r.name, status: r.status, externalId: r.externalId || null, externalSystem: r.externalSystem || null, applicationId: a.id },
-          create: { id: r.id, name: r.name, status: r.status, externalId: r.externalId || null, externalSystem: r.externalSystem || null, applicationId: a.id },
-        });
+        const data = {
+          name: r.name, status: r.status,
+          externalId: r.externalId || null, externalSystem: r.externalSystem || null,
+          applicationId: a.id, moduleId: r.moduleId || null,
+        };
+        await tx.requirement.upsert({ where: { id: r.id }, update: data, create: { id: r.id, ...data } });
       }
     }
     // seconda passata: collega i requisiti condivisi (relazione simmetrica)
@@ -57,7 +68,10 @@ export async function POST(req) {
       }
     }
     for (const i of integrations) {
-      const data = { fromId: i.fromId, toId: i.toId, typeId: i.typeId, label: i.label, status: i.status || "backlog" };
+      const data = {
+        fromId: i.fromId, toId: i.toId, typeId: i.typeId, label: i.label, status: i.status || "backlog",
+        fromModuleId: i.fromModuleId || null, toModuleId: i.toModuleId || null,
+      };
       await tx.integration.upsert({ where: { id: i.id }, update: data, create: { id: i.id, ...data } });
     }
   });

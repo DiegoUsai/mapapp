@@ -9,7 +9,7 @@ export async function PATCH(req, { params }) {
   const app = await prisma.application.update({
     where: { id },
     data,
-    include: { domain: true, contracts: { include: { vendor: true } }, requirements: true },
+    include: { domain: true, contracts: { include: { vendor: true } }, modules: true, requirements: true },
   });
   return NextResponse.json(app);
 }

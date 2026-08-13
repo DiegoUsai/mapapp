@@ -7,7 +7,7 @@ export async function PATCH(req, { params }) {
   const requirement = await prisma.requirement.update({
     where: { id },
     data: body,
-    include: { sharedWith: true },
+    include: { sharedWith: true, module: true },
   });
   return NextResponse.json(requirement);
 }

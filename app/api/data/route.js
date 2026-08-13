@@ -7,12 +7,13 @@ export async function GET() {
     prisma.vendor.findMany({ orderBy: { createdAt: "asc" } }),
     prisma.contract.findMany({ include: { vendor: true }, orderBy: { createdAt: "asc" } }),
     prisma.integrationType.findMany({ orderBy: { createdAt: "asc" } }),
-    prisma.integration.findMany({ include: { type: true } }),
+    prisma.integration.findMany({ include: { type: true, fromModule: true, toModule: true } }),
     prisma.application.findMany({
       include: {
         domain: true,
         contracts: { include: { vendor: true } },
-        requirements: { include: { sharedWith: true } },
+        modules: { orderBy: { createdAt: "asc" } },
+        requirements: { include: { sharedWith: true, module: true } },
       },
       orderBy: { createdAt: "asc" },
     }),

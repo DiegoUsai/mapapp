@@ -14,7 +14,6 @@ export async function POST(req) {
       color: body.color || "#3E5C76",
       type: body.type || "verticale",
       cofogCode: body.cofogCode || null,
-      eurovocUri: body.eurovocUri || null,
     },
   });
   return NextResponse.json(domain);
