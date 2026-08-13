@@ -3,11 +3,13 @@ import { prisma } from "@/lib/prisma";
 
 export async function PATCH(req, { params }) {
   const { id } = await params;
-  const body = await req.json();
+  const { contractIds, ...rest } = await req.json();
+  const data = { ...rest };
+  if (contractIds) data.contracts = { set: contractIds.map((cid) => ({ id: cid })) };
   const app = await prisma.application.update({
     where: { id },
-    data: body,
-    include: { domain: true, contract: { include: { vendor: true } }, requirements: true },
+    data,
+    include: { domain: true, contracts: { include: { vendor: true } }, requirements: true },
   });
   return NextResponse.json(app);
 }

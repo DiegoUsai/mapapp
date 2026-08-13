@@ -14,6 +14,8 @@ export async function POST(req) {
       vendorId: body.vendorId,
       startDate: body.startDate ? new Date(body.startDate) : null,
       endDate: body.endDate ? new Date(body.endDate) : null,
+      cig: body.cig || [],
+      cup: body.cup || [],
     },
     include: { vendor: true },
   });

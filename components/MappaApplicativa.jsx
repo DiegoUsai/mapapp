@@ -14,6 +14,7 @@ const STATUS = {
   backlog: { label: "Backlog", color: "#8791A0" },
 };
 const COLOR_PALETTE = ["#3E5C76", "#6B4E71", "#7A6A3F", "#7A3E3E", "#4B6B4B", "#5B4B7A", "#2F6B6F", "#7A5A3E"];
+const DOMAIN_TYPES = { verticale: "Verticale", "trasversale-core": "Trasversale core" };
 const TYPE_PALETTE = ["#2F6F76", "#A0522D", "#6A4FA0", "#1F7A4C", "#3A6EA5", "#8A5A44", "#B5482B", "#4B6B4B"];
 
 async function api(url, method = "GET", body) {
@@ -33,9 +34,18 @@ function sharedOf(req) {
   return Array.from(map.values());
 }
 
-function contractLabel(contract) {
-  if (!contract) return "Nessun contratto collegato";
-  return contract.name;
+function contractsLabel(contracts) {
+  if (!contracts?.length) return "Nessun contratto collegato";
+  return contracts.map((c) => c.name).join(", ");
+}
+
+function vendorNamesOfApp(app) {
+  const names = Array.from(new Set(app.contracts.map((c) => c.vendor.name)));
+  return names.length ? names.join(" · ") : "Nessun fornitore (senza contratto)";
+}
+
+function vendorIdsOfApp(app) {
+  return app.contracts.map((c) => c.vendorId);
 }
 
 function StatusBar({ requirements }) {
@@ -141,7 +151,10 @@ function NewContractModal({ vendors, onClose, onCreate, onAddVendor }) {
   const [vendorId, setVendorId] = useState(vendors[0]?.id || "");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [cig, setCig] = useState("");
+  const [cup, setCup] = useState("");
   const canSave = name.trim() && vendorId;
+  const parseList = (s) => s.split(",").map((x) => x.trim()).filter(Boolean);
   return (
     <Modal title="Nuovo contratto" onClose={onClose}>
       <div className="space-y-3">
@@ -159,9 +172,53 @@ function NewContractModal({ vendors, onClose, onCreate, onAddVendor }) {
             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className={inputClass} style={inputStyle} />
           </Field>
         </div>
-        <button disabled={!canSave} onClick={() => canSave && onCreate({ name: name.trim(), vendorId, startDate: startDate || null, endDate: endDate || null })}
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="CIG (separati da virgola)">
+            <input value={cig} onChange={(e) => setCig(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. 91234567A1" />
+          </Field>
+          <Field label="CUP (separati da virgola)">
+            <input value={cup} onChange={(e) => setCup(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. J12345678901" />
+          </Field>
+        </div>
+        <button
+          disabled={!canSave}
+          onClick={() => canSave && onCreate({ name: name.trim(), vendorId, startDate: startDate || null, endDate: endDate || null, cig: parseList(cig), cup: parseList(cup) })}
           className="mt-2 w-full rounded-md py-2 text-[13.5px] font-medium text-white disabled:opacity-40" style={{ backgroundColor: "#1B2430" }}>
           Crea contratto
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function NewDomainModal({ onClose, onCreate }) {
+  const [name, setName] = useState("");
+  const [type, setType] = useState("verticale");
+  const [cofogCode, setCofogCode] = useState("");
+  const [eurovocUri, setEurovocUri] = useState("");
+  const canSave = name.trim();
+  return (
+    <Modal title="Nuovo dominio" onClose={onClose}>
+      <div className="space-y-3">
+        <Field label="Nome dominio">
+          <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. Gestione documentale" />
+        </Field>
+        <Field label="Tipo">
+          <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass} style={inputStyle}>
+            {Object.entries(DOMAIN_TYPES).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+          </select>
+        </Field>
+        <Field label="Codice COFOG (opzionale)">
+          <input value={cofogCode} onChange={(e) => setCofogCode(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. 01.3" />
+        </Field>
+        <Field label="URI Eurovoc (opzionale)">
+          <input value={eurovocUri} onChange={(e) => setEurovocUri(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. http://eurovoc.europa.eu/100141" />
+        </Field>
+        <button
+          disabled={!canSave}
+          onClick={() => canSave && onCreate({ name: name.trim(), type, cofogCode: cofogCode.trim() || null, eurovocUri: eurovocUri.trim() || null })}
+          className="mt-2 w-full rounded-md py-2 text-[13.5px] font-medium text-white disabled:opacity-40" style={{ backgroundColor: "#1B2430" }}>
+          Crea dominio
         </button>
       </div>
     </Modal>
@@ -171,8 +228,9 @@ function NewContractModal({ vendors, onClose, onCreate, onAddVendor }) {
 function NewAppModal({ domains, contracts, onClose, onCreate, onAddDomain, onOpenNewContract }) {
   const [name, setName] = useState("");
   const [domainId, setDomainId] = useState(domains[0]?.id || "");
-  const [contractId, setContractId] = useState("");
+  const [contractIds, setContractIds] = useState([]);
   const canSave = name.trim() && domainId;
+  const toggleContract = (id) => setContractIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   return (
     <Modal title="Nuovo applicativo" onClose={onClose}>
       <div className="space-y-3">
@@ -182,18 +240,21 @@ function NewAppModal({ domains, contracts, onClose, onCreate, onAddDomain, onOpe
         <Field label="Dominio">
           <ComboAdd options={domains} value={domainId} onChange={setDomainId} onAddNew={onAddDomain} placeholder="Nome nuovo dominio" />
         </Field>
-        <Field label="Contratto">
-          <div className="flex gap-1.5">
-            <select value={contractId} onChange={(e) => setContractId(e.target.value)} className={inputClass} style={inputStyle}>
-              <option value="">Nessun contratto</option>
-              {contracts.map((c) => <option key={c.id} value={c.id}>{c.name} — {c.vendor.name}</option>)}
-            </select>
-            <button type="button" onClick={onOpenNewContract} className="shrink-0 rounded-md border px-2.5 text-[12.5px] font-medium" style={{ borderColor: "#D8D5CC", color: "#3D3A34" }}>
-              + Nuovo
-            </button>
+        <Field label="Contratti">
+          <div className="max-h-32 space-y-1 overflow-y-auto rounded-md border p-2" style={{ borderColor: "#D8D5CC" }}>
+            {contracts.length === 0 && <div className="text-[12.5px]" style={{ color: "#8A8578" }}>Nessun contratto disponibile</div>}
+            {contracts.map((c) => (
+              <label key={c.id} className="flex items-center gap-1.5 text-[13px]" style={{ color: "#3D3A34" }}>
+                <input type="checkbox" checked={contractIds.includes(c.id)} onChange={() => toggleContract(c.id)} />
+                {c.name} — {c.vendor.name}
+              </label>
+            ))}
           </div>
+          <button type="button" onClick={onOpenNewContract} className="mt-1.5 flex items-center gap-1 text-[12.5px] font-medium underline underline-offset-2" style={{ color: "#6B655A" }}>
+            <Plus size={12} /> Nuovo contratto
+          </button>
         </Field>
-        <button disabled={!canSave} onClick={() => canSave && onCreate({ name: name.trim(), domainId, contractId: contractId || null })}
+        <button disabled={!canSave} onClick={() => canSave && onCreate({ name: name.trim(), domainId, contractIds })}
           className="mt-2 w-full rounded-md py-2 text-[13.5px] font-medium text-white disabled:opacity-40" style={{ backgroundColor: "#1B2430" }}>
           Crea applicativo
         </button>
@@ -250,6 +311,7 @@ function NewIntegrationModal({ app, apps, types, onAddType, onClose, onCreate })
   const [direction, setDirection] = useState("out");
   const [target, setTarget] = useState(others[0]?.id || "");
   const [typeId, setTypeId] = useState(types[0]?.id || "");
+  const [status, setStatus] = useState("backlog");
   const [label, setLabel] = useState("");
   return (
     <Modal title={`Nuova integrazione · ${app.name}`} onClose={onClose}>
@@ -268,12 +330,17 @@ function NewIntegrationModal({ app, apps, types, onAddType, onClose, onCreate })
         <Field label="Tipologia di integrazione">
           <ComboAdd options={types} value={typeId} onChange={setTypeId} onAddNew={onAddType} placeholder="Nome nuova tipologia" />
         </Field>
+        <Field label="Stato">
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className={inputClass} style={inputStyle}>
+            {Object.entries(STATUS).map(([k, s]) => <option key={k} value={k}>{s.label}</option>)}
+          </select>
+        </Field>
         <Field label="Descrizione della relazione">
           <input value={label} onChange={(e) => setLabel(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. Richiama l'API di protocollazione" />
         </Field>
         <button
           disabled={!target || !typeId || !label.trim()}
-          onClick={() => onCreate({ fromId: direction === "out" ? app.id : target, toId: direction === "out" ? target : app.id, typeId, label: label.trim() })}
+          onClick={() => onCreate({ fromId: direction === "out" ? app.id : target, toId: direction === "out" ? target : app.id, typeId, status, label: label.trim() })}
           className="mt-2 w-full rounded-md py-2 text-[13.5px] font-medium text-white disabled:opacity-40" style={{ backgroundColor: "#1B2430" }}>
           Aggiungi integrazione
         </button>
@@ -306,6 +373,7 @@ function AppDetailPanel({ app, apps, integrations, integrationTypes, onJump, onC
                   <span className="shrink-0 text-[10.5px] font-semibold uppercase tracking-wide">{i.type.name}</span>
                   Si integra con «{t.name}» — {i.label}
                 </button>
+                <StatusPill status={i.status} />
                 <button onClick={() => onDeleteIntegration(i.id)} disabled={saving} className="shrink-0 p-1 disabled:opacity-50"><Trash2 size={13} style={{ color: "#B5B0A3" }} /></button>
               </div>
             );
@@ -320,6 +388,7 @@ function AppDetailPanel({ app, apps, integrations, integrationTypes, onJump, onC
                   <span className="shrink-0 text-[10.5px] font-semibold uppercase tracking-wide">{i.type.name}</span>
                   Usato da «{s.name}» — {i.label}
                 </button>
+                <StatusPill status={i.status} />
                 <button onClick={() => onDeleteIntegration(i.id)} disabled={saving} className="shrink-0 p-1 disabled:opacity-50"><Trash2 size={13} style={{ color: "#B5B0A3" }} /></button>
               </div>
             );
@@ -381,7 +450,7 @@ function RelationMap({ apps, integrations, integrationTypes, selected, onSelect,
     const rawNodes = apps.map((a) => ({ id: a.id, name: a.name, domain: a.domain }));
     const rawLinks = [];
     integrations.forEach((i) => {
-      if (appIds.has(i.fromId) && appIds.has(i.toId)) rawLinks.push({ source: i.fromId, target: i.toId, kind: "integration", type: i.type, label: i.label });
+      if (appIds.has(i.fromId) && appIds.has(i.toId)) rawLinks.push({ source: i.fromId, target: i.toId, kind: "integration", type: i.type, label: i.label, status: i.status });
     });
     const seen = new Set();
     apps.forEach((app) =>
@@ -431,11 +500,18 @@ function RelationMap({ apps, integrations, integrationTypes, selected, onSelect,
             const isReq = l.kind === "requirement";
             const stroke = isReq ? "#B5482B" : l.type?.color || "#2F6F76";
             return (
-              <line key={idx} x1={l.source.x} y1={l.source.y} x2={l.target.x} y2={l.target.y} stroke={stroke}
-                strokeWidth={isReq ? 1.6 : 1.8} strokeDasharray={isReq ? "4 3" : "0"} opacity={dim ? 0.15 : isReq ? 0.7 : 0.6}
-                markerEnd={isReq ? undefined : `url(#arrow-${l.type?.id || "default"})`}>
-                {!isReq && <title>{l.type ? `${l.type.name} — ${l.label}` : l.label}</title>}
-              </line>
+              <g key={idx} opacity={dim ? 0.15 : isReq ? 0.7 : 0.6}>
+                <line x1={l.source.x} y1={l.source.y} x2={l.target.x} y2={l.target.y} stroke={stroke}
+                  strokeWidth={isReq ? 1.6 : 1.8} strokeDasharray={isReq ? "4 3" : "0"}
+                  markerEnd={isReq ? undefined : `url(#arrow-${l.type?.id || "default"})`}>
+                  {!isReq && <title>{l.type ? `${l.type.name} — ${l.label} (${STATUS[l.status]?.label || l.status})` : l.label}</title>}
+                </line>
+                {!isReq && (
+                  <circle cx={(l.source.x + l.target.x) / 2} cy={(l.source.y + l.target.y) / 2} r={4} fill={STATUS[l.status]?.color || "#8791A0"} stroke="#fff" strokeWidth={1}>
+                    <title>{STATUS[l.status]?.label || l.status}</title>
+                  </circle>
+                )}
+              </g>
             );
           })}
           {nodes.map((n) => {
@@ -458,7 +534,7 @@ function RelationMap({ apps, integrations, integrationTypes, selected, onSelect,
           <div className="mb-3">
             <div className="text-[15px] font-semibold" style={{ color: "#232019", fontFamily: "'IBM Plex Serif', serif" }}>{selectedApp.name}</div>
             <div className="mt-1 inline-block rounded px-1.5 py-0.5 text-[11px]" style={{ backgroundColor: "#F0EEE7", color: "#6B655A", fontFamily: "'IBM Plex Mono', monospace" }}>
-              {contractLabel(selectedApp.contract)}
+              {contractsLabel(selectedApp.contracts)}
             </div>
           </div>
           <AppDetailPanel app={selectedApp} apps={apps} integrations={integrations} integrationTypes={integrationTypes} onClose={() => onSelect(null)} {...panelProps} />
@@ -474,12 +550,18 @@ function rowsFromSheet(workbook, sheetName) {
 }
 
 function datasetFromWorkbook(workbook) {
-  const domains = rowsFromSheet(workbook, "Domini").filter((r) => r.id).map((r, i) => ({ id: String(r.id), name: String(r.etichetta || r.id), color: r.colore_hex || COLOR_PALETTE[i % COLOR_PALETTE.length] }));
+  const domains = rowsFromSheet(workbook, "Domini").filter((r) => r.id).map((r, i) => ({
+    id: String(r.id), name: String(r.etichetta || r.id), color: r.colore_hex || COLOR_PALETTE[i % COLOR_PALETTE.length],
+    type: r.tipo === "trasversale-core" ? "trasversale-core" : "verticale",
+    cofogCode: r.codice_cofog || null, eurovocUri: r.uri_eurovoc || null,
+  }));
   const vendors = rowsFromSheet(workbook, "Fornitori").filter((r) => r.id).map((r) => ({ id: String(r.id), name: String(r.etichetta || r.id) }));
   const integrationTypes = rowsFromSheet(workbook, "TipiIntegrazione").filter((r) => r.id).map((r, i) => ({ id: String(r.id), name: String(r.etichetta || r.id), color: r.colore_hex || TYPE_PALETTE[i % TYPE_PALETTE.length] }));
   const contracts = rowsFromSheet(workbook, "Contratti").filter((r) => r.id).map((r) => ({
     id: String(r.id), name: String(r.nome || r.id), vendorId: String(r.fornitore_id || ""),
     startDate: r.data_inizio || null, endDate: r.data_fine || null,
+    cig: r.cig ? String(r.cig).split(",").map((x) => x.trim()).filter(Boolean) : [],
+    cup: r.cup ? String(r.cup).split(",").map((x) => x.trim()).filter(Boolean) : [],
   }));
   const reqRows = rowsFromSheet(workbook, "Requisiti").filter((r) => r.id && r.app_id);
   const reqByApp = {};
@@ -500,28 +582,29 @@ function datasetFromWorkbook(workbook) {
   });
   const apps = rowsFromSheet(workbook, "Applicativi").filter((r) => r.id).map((r) => ({
     id: String(r.id), name: String(r.nome || r.id), domainId: String(r.dominio_id || ""),
-    contractId: r.contratto_id ? String(r.contratto_id) : null, requirements: reqByApp[String(r.id)] || [],
+    contractIds: r.contratto_id ? [String(r.contratto_id)] : [], requirements: reqByApp[String(r.id)] || [],
   }));
   const integrations = rowsFromSheet(workbook, "Integrazioni").filter((r) => r.id && r.da_app_id && r.verso_app_id).map((r) => ({
     id: String(r.id), fromId: String(r.da_app_id), toId: String(r.verso_app_id), typeId: String(r.tipo_id || ""), label: String(r.descrizione || ""),
+    status: ["presente", "in-sviluppo", "backlog"].includes(r.stato) ? r.stato : "backlog",
   }));
   return { domains, vendors, integrationTypes, contracts, apps, integrations };
 }
 
 function toExportDataset(data) {
   return {
-    domains: data.domains.map((d) => ({ id: d.id, name: d.name, color: d.color })),
+    domains: data.domains.map((d) => ({ id: d.id, name: d.name, color: d.color, type: d.type, cofogCode: d.cofogCode, eurovocUri: d.eurovocUri })),
     vendors: data.vendors.map((v) => ({ id: v.id, name: v.name })),
     integrationTypes: data.integrationTypes.map((t) => ({ id: t.id, name: t.name, color: t.color })),
-    contracts: data.contracts.map((c) => ({ id: c.id, name: c.name, vendorId: c.vendorId, startDate: c.startDate, endDate: c.endDate })),
+    contracts: data.contracts.map((c) => ({ id: c.id, name: c.name, vendorId: c.vendorId, startDate: c.startDate, endDate: c.endDate, cig: c.cig, cup: c.cup })),
     apps: data.applications.map((a) => ({
-      id: a.id, name: a.name, domainId: a.domainId, contractId: a.contractId,
+      id: a.id, name: a.name, domainId: a.domainId, contractIds: a.contracts.map((c) => c.id),
       requirements: a.requirements.map((r) => ({
         id: r.id, name: r.name, status: r.status, externalId: r.externalId, externalSystem: r.externalSystem,
         sharedWith: sharedOf(r).map((s) => s.id),
       })),
     })),
-    integrations: data.integrations.map((i) => ({ id: i.id, fromId: i.fromId, toId: i.toId, typeId: i.typeId, label: i.label })),
+    integrations: data.integrations.map((i) => ({ id: i.id, fromId: i.fromId, toId: i.toId, typeId: i.typeId, label: i.label, status: i.status })),
   };
 }
 
@@ -612,6 +695,7 @@ export default function MappaApplicativa({ userEmail }) {
   const [flash, setFlash] = useState(null);
   const [showNewApp, setShowNewApp] = useState(false);
   const [showNewContract, setShowNewContract] = useState(false);
+  const [showNewDomain, setShowNewDomain] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
   const cardRefs = useRef({});
 
@@ -637,13 +721,11 @@ export default function MappaApplicativa({ userEmail }) {
   }
 
   const contracts = data.contracts;
-  const vendorOfApp = (app) => app.contract?.vendor?.name || "Nessun fornitore (senza contratto)";
-  const vendorIdOfApp = (app) => app.contract?.vendorId || null;
 
   const filtered = data.applications.filter((app) => {
     if (domainFilter && app.domainId !== domainFilter) return false;
-    if (vendorFilter && vendorIdOfApp(app) !== vendorFilter) return false;
-    if (contractFilter && app.contractId !== contractFilter) return false;
+    if (vendorFilter && !vendorIdsOfApp(app).includes(vendorFilter)) return false;
+    if (contractFilter && !app.contracts.some((c) => c.id === contractFilter)) return false;
     if (query && !app.name.toLowerCase().includes(query.toLowerCase())) return false;
     return true;
   });
@@ -674,6 +756,11 @@ export default function MappaApplicativa({ userEmail }) {
   };
 
   const createContract = (payload) => withSaving(async () => { await api("/api/contracts", "POST", payload); setShowNewContract(false); });
+  const createDomain = (payload) => withSaving(async () => {
+    const color = COLOR_PALETTE[data.domains.length % COLOR_PALETTE.length];
+    await api("/api/domains", "POST", { ...payload, color });
+    setShowNewDomain(false);
+  });
   const createApp = (payload) => withSaving(async () => {
     const app = await api("/api/applications", "POST", payload);
     setShowNewApp(false);
@@ -725,6 +812,9 @@ export default function MappaApplicativa({ userEmail }) {
               {data.domains.map((d) => (
                 <Chip key={d.id} active={domainFilter === d.id} color={d.color} onClick={() => setDomainFilter(domainFilter === d.id ? null : d.id)}>{d.name}</Chip>
               ))}
+              <button onClick={() => setShowNewDomain(true)} className="flex items-center gap-1 text-[12.5px] font-medium underline underline-offset-2" style={{ color: "#6B655A" }}>
+                <Plus size={12} /> Nuovo dominio
+              </button>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <button onClick={() => setShowImportExport(true)} className="flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[12.5px] font-medium" style={{ borderColor: "#D8D5CC", color: "#3D3A34" }}>
@@ -806,7 +896,7 @@ export default function MappaApplicativa({ userEmail }) {
                         <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: app.domain.color }} />
                         <div>
                           <div className="text-[15px] font-semibold" style={{ color: "#232019", fontFamily: "'IBM Plex Serif', serif" }}>{app.name}</div>
-                          <div className="text-[12px]" style={{ color: "#8A8578" }}>{vendorOfApp(app)}</div>
+                          <div className="text-[12px]" style={{ color: "#8A8578" }}>{vendorNamesOfApp(app)}</div>
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-1.5">
@@ -815,7 +905,7 @@ export default function MappaApplicativa({ userEmail }) {
                       </div>
                     </div>
                     <div className="mt-2 inline-block rounded px-1.5 py-0.5 text-[11px]" style={{ backgroundColor: "#F0EEE7", color: "#6B655A", fontFamily: "'IBM Plex Mono', monospace" }}>
-                      {contractLabel(app.contract)}
+                      {contractsLabel(app.contracts)}
                     </div>
                     <div className="mt-3">
                       <StatusBar requirements={app.requirements} />
@@ -843,6 +933,7 @@ export default function MappaApplicativa({ userEmail }) {
           onAddDomain={addDomainAsync} onOpenNewContract={() => { setShowNewApp(false); setShowNewContract(true); }} />
       )}
       {showNewContract && <NewContractModal vendors={data.vendors} onClose={() => setShowNewContract(false)} onCreate={createContract} onAddVendor={addVendor} />}
+      {showNewDomain && <NewDomainModal onClose={() => setShowNewDomain(false)} onCreate={createDomain} />}
       {showImportExport && <ImportExportModal data={data} onClose={() => setShowImportExport(false)} onImport={importDataset} />}
     </div>
   );

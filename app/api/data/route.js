@@ -11,7 +11,7 @@ export async function GET() {
     prisma.application.findMany({
       include: {
         domain: true,
-        contract: { include: { vendor: true } },
+        contracts: { include: { vendor: true } },
         requirements: { include: { sharedWith: true } },
       },
       orderBy: { createdAt: "asc" },

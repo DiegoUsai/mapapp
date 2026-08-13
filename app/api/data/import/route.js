@@ -10,7 +10,8 @@ export async function POST(req) {
 
   await prisma.$transaction(async (tx) => {
     for (const d of domains) {
-      await tx.domain.upsert({ where: { id: d.id }, update: { name: d.name, color: d.color }, create: { id: d.id, name: d.name, color: d.color } });
+      const data = { name: d.name, color: d.color, type: d.type || "verticale", cofogCode: d.cofogCode || null, eurovocUri: d.eurovocUri || null };
+      await tx.domain.upsert({ where: { id: d.id }, update: data, create: { id: d.id, ...data } });
     }
     for (const v of vendors) {
       await tx.vendor.upsert({ where: { id: v.id }, update: { name: v.name }, create: { id: v.id, name: v.name } });
@@ -19,17 +20,19 @@ export async function POST(req) {
       await tx.integrationType.upsert({ where: { id: t.id }, update: { name: t.name, color: t.color }, create: { id: t.id, name: t.name, color: t.color } });
     }
     for (const c of contracts) {
-      await tx.contract.upsert({
-        where: { id: c.id },
-        update: { name: c.name, vendorId: c.vendorId, startDate: c.startDate ? new Date(c.startDate) : null, endDate: c.endDate ? new Date(c.endDate) : null },
-        create: { id: c.id, name: c.name, vendorId: c.vendorId, startDate: c.startDate ? new Date(c.startDate) : null, endDate: c.endDate ? new Date(c.endDate) : null },
-      });
+      const data = {
+        name: c.name, vendorId: c.vendorId,
+        startDate: c.startDate ? new Date(c.startDate) : null, endDate: c.endDate ? new Date(c.endDate) : null,
+        cig: c.cig || [], cup: c.cup || [],
+      };
+      await tx.contract.upsert({ where: { id: c.id }, update: data, create: { id: c.id, ...data } });
     }
     for (const a of apps) {
+      const contractIds = a.contractIds || (a.contractId ? [a.contractId] : []);
       await tx.application.upsert({
         where: { id: a.id },
-        update: { name: a.name, domainId: a.domainId, contractId: a.contractId || null },
-        create: { id: a.id, name: a.name, domainId: a.domainId, contractId: a.contractId || null },
+        update: { name: a.name, domainId: a.domainId, contracts: { set: contractIds.map((id) => ({ id })) } },
+        create: { id: a.id, name: a.name, domainId: a.domainId, contracts: { connect: contractIds.map((id) => ({ id })) } },
       });
     }
     // prima passata: crea/aggiorna i requisiti senza i collegamenti condivisi
@@ -54,11 +57,8 @@ export async function POST(req) {
       }
     }
     for (const i of integrations) {
-      await tx.integration.upsert({
-        where: { id: i.id },
-        update: { fromId: i.fromId, toId: i.toId, typeId: i.typeId, label: i.label },
-        create: { id: i.id, fromId: i.fromId, toId: i.toId, typeId: i.typeId, label: i.label },
-      });
+      const data = { fromId: i.fromId, toId: i.toId, typeId: i.typeId, label: i.label, status: i.status || "backlog" };
+      await tx.integration.upsert({ where: { id: i.id }, update: data, create: { id: i.id, ...data } });
     }
   });
 

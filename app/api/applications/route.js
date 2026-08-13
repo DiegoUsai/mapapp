@@ -5,7 +5,7 @@ export async function GET() {
   const apps = await prisma.application.findMany({
     include: {
       domain: true,
-      contract: { include: { vendor: true } },
+      contracts: { include: { vendor: true } },
       requirements: { include: { sharedWith: true } },
     },
     orderBy: { createdAt: "asc" },
@@ -16,8 +16,12 @@ export async function GET() {
 export async function POST(req) {
   const body = await req.json();
   const app = await prisma.application.create({
-    data: { name: body.name, domainId: body.domainId, contractId: body.contractId || null },
-    include: { domain: true, contract: { include: { vendor: true } }, requirements: true },
+    data: {
+      name: body.name,
+      domainId: body.domainId,
+      contracts: { connect: (body.contractIds || []).map((id) => ({ id })) },
+    },
+    include: { domain: true, contracts: { include: { vendor: true } }, requirements: true },
   });
   return NextResponse.json(app);
 }

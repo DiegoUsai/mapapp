@@ -8,6 +8,14 @@ export async function GET() {
 
 export async function POST(req) {
   const body = await req.json();
-  const domain = await prisma.domain.create({ data: { name: body.name, color: body.color || "#3E5C76" } });
+  const domain = await prisma.domain.create({
+    data: {
+      name: body.name,
+      color: body.color || "#3E5C76",
+      type: body.type || "verticale",
+      cofogCode: body.cofogCode || null,
+      eurovocUri: body.eurovocUri || null,
+    },
+  });
   return NextResponse.json(domain);
 }

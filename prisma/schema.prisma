@@ -60,6 +60,9 @@ model Domain {
   id           String        @id @default(cuid())
   name         String
   color        String        @default("#3E5C76")
+  type         String        @default("verticale") // verticale | trasversale-core
+  cofogCode    String?
+  eurovocUri   String?
   applications Application[]
   createdAt    DateTime      @default(now())
 }
@@ -78,6 +81,8 @@ model Contract {
   vendor       Vendor        @relation(fields: [vendorId], references: [id])
   startDate    DateTime?
   endDate      DateTime?
+  cig          String[]      @default([])
+  cup          String[]      @default([])
   applications Application[]
   createdAt    DateTime      @default(now())
 }
@@ -95,8 +100,7 @@ model Application {
   name             String
   domainId         String
   domain           Domain        @relation(fields: [domainId], references: [id])
-  contractId       String?
-  contract         Contract?     @relation(fields: [contractId], references: [id])
+  contracts        Contract[]
   requirements     Requirement[]
   integrationsFrom Integration[] @relation("IntegrationFrom")
   integrationsTo   Integration[] @relation("IntegrationTo")
@@ -124,5 +128,6 @@ model Integration {
   to     Application     @relation("IntegrationTo", fields: [toId], references: [id], onDelete: Cascade)
   typeId String
   type   IntegrationType @relation(fields: [typeId], references: [id])
+  status String          @default("backlog") // presente | in-sviluppo | backlog
   label  String
 }
