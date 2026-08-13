@@ -60,7 +60,8 @@ model Domain {
   id           String        @id @default(cuid())
   name         String
   color        String        @default("#3E5C76")
-  type         String        @default("verticale") // verticale | trasversale-core
+  ambito       String        @default("verticale") // verticale | trasversale
+  core         Boolean       @default(false)
   cofogCode    String?
   applications Application[]
   createdAt    DateTime      @default(now())

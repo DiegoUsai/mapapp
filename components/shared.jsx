@@ -9,7 +9,9 @@ export const STATUS = {
 };
 export const STATUS_ORDER = { presente: 0, "in-sviluppo": 1, backlog: 2 };
 export const COLOR_PALETTE = ["#3E5C76", "#6B4E71", "#7A6A3F", "#7A3E3E", "#4B6B4B", "#5B4B7A", "#2F6B6F", "#7A5A3E"];
-export const DOMAIN_TYPES = { verticale: "Verticale", "trasversale-core": "Trasversale core" };
+export const DOMAIN_AMBITI = { verticale: "Verticale", trasversale: "Trasversale" };
+export const AMBITO_COLORS = { verticale: "#8A8578", trasversale: "#2F7D5C" };
+export const CORE_BADGE_BG = "#C97F1E";
 export const TYPE_PALETTE = ["#2F6F76", "#A0522D", "#6A4FA0", "#1F7A4C", "#3A6EA5", "#8A5A44", "#B5482B", "#4B6B4B"];
 
 export async function api(url, method = "GET", body) {

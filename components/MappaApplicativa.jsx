@@ -11,6 +11,7 @@ import {
   api, STATUS, COLOR_PALETTE, TYPE_PALETTE,
   Chip, StatusBar, Modal, sharedOf, integrationsFor,
   vendorNamesOfApp, vendorIdsOfApp, contractsLabel,
+  DOMAIN_AMBITI, AMBITO_COLORS, CORE_BADGE_BG,
 } from "./shared";
 import { NewContractModal, NewDomainModal, NewAppModal } from "./modals";
 import { AppDetailPanel } from "./AppDetailPanel";
@@ -100,6 +101,9 @@ function RelationMap({ apps, allApps, integrations, integrationTypes, selected, 
             return (
               <g key={n.id} transform={`translate(${n.x},${n.y})`} onClick={() => onSelect(isSelected ? null : n.id)} style={{ cursor: "pointer" }} opacity={dim ? 0.3 : 1}>
                 <circle r={30} fill={n.domain?.color || "#8791A0"} stroke={isSelected ? "#232019" : "#fff"} strokeWidth={isSelected ? 2.5 : 2} />
+                {n.domain?.core && (
+                  <circle r={30} fill="none" stroke={CORE_BADGE_BG} strokeWidth="2" strokeDasharray="3,2" opacity="0.8" />
+                )}
                 <text textAnchor="middle" dy={4} fontSize="9.5" fontWeight="600" fill="#fff" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                   {n.name.length > 14 ? n.name.slice(0, 13) + "…" : n.name}
                 </text>
@@ -137,7 +141,8 @@ function rowsFromSheet(workbook, sheetName) {
 function datasetFromWorkbook(workbook) {
   const domains = rowsFromSheet(workbook, "Domini").filter((r) => r.id).map((r, i) => ({
     id: String(r.id), name: String(r.etichetta || r.id), color: r.colore_hex || COLOR_PALETTE[i % COLOR_PALETTE.length],
-    type: r.tipo === "trasversale-core" ? "trasversale-core" : "verticale",
+    ambito: r.ambito === "trasversale" ? "trasversale" : (r.tipo === "trasversale-core" ? "trasversale" : "verticale"),
+    core: r.core === true || r.tipo === "trasversale-core" || false,
     cofogCode: r.codice_cofog || null,
   }));
   const vendors = rowsFromSheet(workbook, "Fornitori").filter((r) => r.id).map((r) => ({ id: String(r.id), name: String(r.etichetta || r.id) }));
@@ -180,7 +185,7 @@ function datasetFromWorkbook(workbook) {
 
 function toExportDataset(data) {
   return {
-    domains: data.domains.map((d) => ({ id: d.id, name: d.name, color: d.color, type: d.type, cofogCode: d.cofogCode })),
+    domains: data.domains.map((d) => ({ id: d.id, name: d.name, color: d.color, ambito: d.ambito, core: d.core, cofogCode: d.cofogCode })),
     vendors: data.vendors.map((v) => ({ id: v.id, name: v.name })),
     integrationTypes: data.integrationTypes.map((t) => ({ id: t.id, name: t.name, color: t.color })),
     contracts: data.contracts.map((c) => ({ id: c.id, name: c.name, vendorId: c.vendorId, startDate: c.startDate, endDate: c.endDate, cig: c.cig, cup: c.cup })),
@@ -501,6 +506,16 @@ export default function MappaApplicativa({ userEmail }) {
                         <div>
                           <div className="text-[15px] font-semibold" style={{ color: "#232019", fontFamily: "'IBM Plex Serif', serif" }}>{app.name}</div>
                           <div className="text-[12px]" style={{ color: "#8A8578" }}>{vendorNamesOfApp(app)}</div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium" style={{ backgroundColor: AMBITO_COLORS[app.domain.ambito], color: "#fff" }}>
+                              {DOMAIN_AMBITI[app.domain.ambito]}
+                            </span>
+                            {app.domain.core && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-white" style={{ backgroundColor: CORE_BADGE_BG }}>
+                                CORE
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-1.5">

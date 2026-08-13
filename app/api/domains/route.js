@@ -12,7 +12,8 @@ export async function POST(req) {
     data: {
       name: body.name,
       color: body.color || "#3E5C76",
-      type: body.type || "verticale",
+      ambito: body.ambito || "verticale",
+      core: body.core || false,
       cofogCode: body.cofogCode || null,
     },
   });

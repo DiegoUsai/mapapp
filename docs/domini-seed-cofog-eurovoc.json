@@ -1,0 +1,102 @@
+{
+  "_nota": "Dataset di seed per l'elenco precompilato dei domini applicativi con allineamento semantico COFOG/Eurovoc. Il tipo di dominio è espresso da DUE attributi indipendenti: 'ambito' (VERTICALE = specifico di un ambito funzionale; TRASVERSALE = usato da più ambiti) e 'core' (true = dominio fondante senza cui l'ecosistema non opera). Le due dimensioni sono ortogonali: esistono domini verticali-core (contabilità), trasversali-core (documentale), trasversali-non-core (portale ferie), verticali-non-core (gestionale di un singolo ufficio). I codici COFOG sono verificati sulla classificazione ONU/Eurostat 1999. Gli URI Eurovoc sono nel formato ufficiale http://eurovoc.europa.eu/{id}; dove l'id del concetto non è stato verificato è lasciato null con un suggerimento nel campo eurovoc_da_verificare. Verificare gli id su https://op.europa.eu/en/web/eu-vocabularies prima dell'uso in produzione.",
+  "ambiti": ["VERTICALE", "TRASVERSALE"],
+  "domini": [
+    {
+      "id": "DOC_PROTOCOL",
+      "nome": "Gestione documentale e protocollo",
+      "ambito": "TRASVERSALE",
+      "core": true,
+      "cofog": "01.3.3",
+      "cofog_descrizione": "Other general services — mantenimento e archiviazione di documenti e archivi di governo",
+      "eurovoc_uri": "http://eurovoc.europa.eu/3221",
+      "eurovoc_label": "documentazione",
+      "eurovoc_da_verificare": "Concetto 3221 'documentation'; valutare anche un concetto più specifico su protocollo/archivistica",
+      "descrizione_funzionale": "Protocollo informatico AOO, classificazione mediante titolario, fascicolazione e conservazione a norma."
+    },
+    {
+      "id": "DIGITAL_ID",
+      "nome": "Identità digitale",
+      "ambito": "TRASVERSALE",
+      "core": true,
+      "cofog": "01.3.3",
+      "cofog_descrizione": "Other general services — servizi centralizzati di autenticazione e accesso",
+      "eurovoc_uri": null,
+      "eurovoc_label": "identità digitale / autenticazione",
+      "eurovoc_da_verificare": "Cercare 'electronic identification', 'digital identity', 'data protection' nei microtesauri 3226/3236",
+      "descrizione_funzionale": "Autenticazione centralizzata e gestione accessi tramite SPID, CIE ed eIDAS."
+    },
+    {
+      "id": "DIGITAL_PMT",
+      "nome": "Pagamenti elettronici",
+      "ambito": "TRASVERSALE",
+      "core": true,
+      "cofog": "01.1.2",
+      "cofog_descrizione": "Financial and fiscal affairs — servizi di incasso e pagamento",
+      "eurovoc_uri": null,
+      "eurovoc_label": "pagamento elettronico",
+      "eurovoc_da_verificare": "Cercare 'electronic payment' / 'means of payment' nei microtesauri 2416/2411",
+      "descrizione_funzionale": "Integrazione con il nodo nazionale dei pagamenti pagoPA."
+    },
+    {
+      "id": "FINANCIAL_ACC",
+      "nome": "Contabilità e finanza",
+      "ambito": "VERTICALE",
+      "core": true,
+      "cofog": "01.1.2",
+      "cofog_descrizione": "Financial and fiscal affairs — contabilità e bilancio",
+      "eurovoc_uri": "http://eurovoc.europa.eu/4026",
+      "eurovoc_label": "contabilità",
+      "eurovoc_da_verificare": "Concetto 4026 'accounting'; valutare 'public accounting' se presente",
+      "descrizione_funzionale": "Contabilità finanziaria ed economico-patrimoniale, bilancio, tesoreria (OPI). Verticale ma core: l'ente non opera senza."
+    },
+    {
+      "id": "HR_MANAGEMENT",
+      "nome": "Gestione risorse umane (HR)",
+      "ambito": "VERTICALE",
+      "core": false,
+      "cofog": "01.3.1",
+      "cofog_descrizione": "General personnel services — politiche e procedure del personale",
+      "eurovoc_uri": null,
+      "eurovoc_label": "gestione del personale",
+      "eurovoc_da_verificare": "Cercare 'personnel management' nei microtesauri 4416/4406",
+      "descrizione_funzionale": "Gestione giuridica ed economica del personale, presenze, paghe e concorsi. Nota: alcuni servizi HR self-service (es. richiesta ferie) sono trasversali ma non core."
+    },
+    {
+      "id": "CIVIL_REGISTRY",
+      "nome": "Anagrafe e stato civile",
+      "ambito": "VERTICALE",
+      "core": true,
+      "cofog": "01.3.2",
+      "cofog_descrizione": "Overall planning and statistical services — servizi demografici (registrazione anagrafica)",
+      "eurovoc_uri": null,
+      "eurovoc_label": "stato civile / registro della popolazione",
+      "eurovoc_da_verificare": "Cercare 'civil status' / 'population register' nei microtesauri 2806/1231",
+      "descrizione_funzionale": "Gestione demografica ed elettorale integrata con ANPR. Core per gli enti locali."
+    },
+    {
+      "id": "TERRITORY_GIS",
+      "nome": "Edilizia e urbanistica (SUE/SUAP)",
+      "ambito": "VERTICALE",
+      "core": false,
+      "cofog": "06.2.0",
+      "cofog_descrizione": "Community development — pianificazione urbanistica e sviluppo del territorio",
+      "eurovoc_uri": null,
+      "eurovoc_label": "urbanistica",
+      "eurovoc_da_verificare": "Cercare 'town planning' / 'building' nel microtesauro 2846",
+      "descrizione_funzionale": "Governo del territorio, pianificazione, sportelli edilizia e attività produttive."
+    },
+    {
+      "id": "HEALTH_EHR",
+      "nome": "Sistemi informativi sanitari e FSE",
+      "ambito": "VERTICALE",
+      "core": true,
+      "cofog": "07.6.0",
+      "cofog_descrizione": "Health n.e.c. — servizi sanitari non altrove classificati",
+      "eurovoc_uri": null,
+      "eurovoc_label": "sanità pubblica / cartella clinica",
+      "eurovoc_da_verificare": "Cercare 'health policy' / 'medical record' nel microtesauro 2841",
+      "descrizione_funzionale": "Cartella clinica elettronica, gestione CUP, interoperabilità con FSE 2.0. Core per gli enti sanitari."
+    }
+  ]
+}

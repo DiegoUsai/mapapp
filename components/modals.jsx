@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { Modal, Field, ComboAdd, inputClass, inputStyle, STATUS, DOMAIN_TYPES } from "./shared";
+import { Modal, Field, ComboAdd, inputClass, inputStyle, STATUS, DOMAIN_AMBITI } from "./shared";
 import { COFOG_OPTIONS, cofogCleanLabel } from "@/lib/cofog";
 
 export function RenameModal({ title, label, initialValue, placeholder, saveLabel = "Salva", onClose, onSave }) {
@@ -69,7 +69,8 @@ export function NewContractModal({ vendors, initial, onClose, onSave, onAddVendo
 
 export function NewDomainModal({ initial, onClose, onSave }) {
   const [name, setName] = useState(initial?.name || "");
-  const [type, setType] = useState(initial?.type || "verticale");
+  const [ambito, setAmbito] = useState(initial?.ambito || "verticale");
+  const [core, setCore] = useState(initial?.core || false);
   const [cofogCode, setCofogCode] = useState(initial?.cofogCode || "");
   const [nameTouched, setNameTouched] = useState(false);
   const canSave = Boolean(cofogCode) && name.trim();
@@ -98,14 +99,18 @@ export function NewDomainModal({ initial, onClose, onSave }) {
         <Field label="Nome dominio">
           <input value={name} onChange={handleNameChange} className={inputClass} style={inputStyle} placeholder="Es. Gestione documentale" />
         </Field>
-        <Field label="Tipo">
-          <select value={type} onChange={(e) => setType(e.target.value)} className={inputClass} style={inputStyle}>
-            {Object.entries(DOMAIN_TYPES).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+        <Field label="Ambito">
+          <select value={ambito} onChange={(e) => setAmbito(e.target.value)} className={inputClass} style={inputStyle}>
+            {Object.entries(DOMAIN_AMBITI).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
           </select>
         </Field>
+        <label className="flex items-center gap-2">
+          <input type="checkbox" checked={core} onChange={(e) => setCore(e.target.checked)} />
+          <span className="text-[13.5px]" style={{ color: "#232019" }}>Criticità core (fondamentale per l'ecosistema)</span>
+        </label>
         <button
           disabled={!canSave}
-          onClick={() => canSave && onSave({ name: name.trim(), type, cofogCode: cofogCode || null })}
+          onClick={() => canSave && onSave({ name: name.trim(), ambito, core, cofogCode: cofogCode || null })}
           className="mt-2 w-full rounded-md py-2 text-[13.5px] font-medium text-white disabled:opacity-40" style={{ backgroundColor: "#1B2430" }}>
           {initial ? "Salva dominio" : "Crea dominio"}
         </button>
