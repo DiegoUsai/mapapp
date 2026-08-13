@@ -19,6 +19,7 @@ export function AppDetailPanel({
   const [statusFilter, setStatusFilter] = useState([]);
   const [modal, setModal] = useState(null);
   const [confirm, setConfirm] = useState(null);
+  const [drillDownModuleId, setDrillDownModuleId] = useState(null);
 
   const { outgoing, incoming } = integrationsFor(integrations, app.id);
   const hasIntegrations = outgoing.length > 0 || incoming.length > 0;
@@ -174,9 +175,9 @@ export function AppDetailPanel({
                 const modReqs = applyFilter(sortByStatus(reqsByModule[mod.id] || []));
                 return (
                   <div key={mod.id} className="rounded-md border" style={{ borderColor: "#E2DFD6" }}>
-                    <div className="flex items-center justify-between px-3 py-2 rounded-t-md" style={{ backgroundColor: "#F5F6F3" }}>
+                    <button onClick={() => setDrillDownModuleId(mod.id)} className="w-full flex items-center justify-between px-3 py-2 rounded-t-md text-left" style={{ backgroundColor: "#F5F6F3", cursor: "pointer" }}>
                       <span className="text-[12.5px] font-semibold" style={{ color: "#3D3A34" }}>{mod.name}</span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         {onUpdateModule && (
                           <button onClick={() => setModal({ type: "renameModule", payload: mod })} className="p-1">
                             <Pencil size={12} style={{ color: "#B5B0A3" }} />
@@ -188,7 +189,7 @@ export function AppDetailPanel({
                           </button>
                         )}
                       </div>
-                    </div>
+                    </button>
                     <ul className="space-y-2 px-3 py-2">
                       {modReqs.length === 0 && (
                         <li className="py-1 text-[12px]" style={{ color: "#8A8578" }}>Nessun requisito in questo modulo</li>
@@ -201,6 +202,62 @@ export function AppDetailPanel({
             </div>
           )}
 
+          {/* Drill-down modulo */}
+          {drillDownModuleId && (
+            <>
+              <button onClick={() => setDrillDownModuleId(null)} className="mb-3 flex items-center gap-1 text-[12.5px] font-medium" style={{ color: "#8A8578" }}>
+                <X size={12} /> Chiudi drill-down modulo
+              </button>
+              {(() => {
+                const drillMod = modules.find((m) => m.id === drillDownModuleId);
+                if (!drillMod) return null;
+                const drillModOutgoing = applyFilter(sortByStatus(integrations.filter((i) => i.fromModuleId === drillDownModuleId)));
+                const drillModIncoming = applyFilter(sortByStatus(integrations.filter((i) => i.toModuleId === drillDownModuleId)));
+                const drillModReqs = applyFilter(sortByStatus(app.requirements.filter((r) => r.moduleId === drillDownModuleId)));
+                return (
+                  <div className="rounded-lg border p-4 space-y-4" style={{ borderColor: "#E2DFD6", backgroundColor: "#FBFAF7" }}>
+                    <div className="text-[14px] font-semibold" style={{ color: "#232019", fontFamily: "'IBM Plex Serif', serif" }}>
+                      Modulo: {drillMod.name}
+                    </div>
+
+                    {drillModReqs.length > 0 && (
+                      <div>
+                        <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide" style={{ color: "#8A8578" }}>Requisiti ({drillModReqs.length})</div>
+                        <ul className="space-y-2">
+                          {drillModReqs.map(renderRequirement)}
+                        </ul>
+                      </div>
+                    )}
+
+                    {drillModOutgoing.length > 0 && (
+                      <div>
+                        <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide" style={{ color: "#8A8578" }}>Integrazioni in uscita ({drillModOutgoing.length})</div>
+                        <div className="space-y-1.5">
+                          {drillModOutgoing.map((i) => renderIntegrationRow(i, "out"))}
+                        </div>
+                      </div>
+                    )}
+
+                    {drillModIncoming.length > 0 && (
+                      <div>
+                        <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide" style={{ color: "#8A8578" }}>Integrazioni in ingresso ({drillModIncoming.length})</div>
+                        <div className="space-y-1.5">
+                          {drillModIncoming.map((i) => renderIntegrationRow(i, "in"))}
+                        </div>
+                      </div>
+                    )}
+
+                    {drillModReqs.length === 0 && drillModOutgoing.length === 0 && drillModIncoming.length === 0 && (
+                      <div className="text-[12px]" style={{ color: "#8A8578" }}>Nessun contenuto in questo modulo</div>
+                    )}
+                  </div>
+                );
+              })()}
+            </>
+          )}
+
+          {!drillDownModuleId && (
+            <>
           {/* Default level requirements */}
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <div className="text-[11px] font-medium uppercase tracking-wide" style={{ color: "#8A8578" }}>
@@ -249,6 +306,8 @@ export function AppDetailPanel({
               <Trash2 size={13} /> Elimina applicativo
             </button>
           </div>
+            </>
+          )}
         </>
       )}
 
