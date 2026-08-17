@@ -10,7 +10,7 @@ export async function POST(req) {
 
   await prisma.$transaction(async (tx) => {
     for (const d of domains) {
-      const data = { name: d.name, color: d.color, type: d.type || "verticale", cofogCode: d.cofogCode || null };
+      const data = { name: d.name, color: d.color, ambito: d.ambito || d.type || "verticale", core: d.core || false, cofogCode: d.cofogCode || null };
       await tx.domain.upsert({ where: { id: d.id }, update: data, create: { id: d.id, ...data } });
     }
     for (const v of vendors) {
@@ -40,8 +40,8 @@ export async function POST(req) {
       for (const m of a.modules || []) {
         await tx.module.upsert({
           where: { id: m.id },
-          update: { name: m.name },
-          create: { id: m.id, name: m.name, applicationId: a.id },
+          update: { name: m.name, description: m.description || null },
+          create: { id: m.id, name: m.name, description: m.description || null, applicationId: a.id },
         });
       }
     }

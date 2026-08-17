@@ -244,7 +244,7 @@ function toExportDataset(data) {
     apps: data.applications.map((a) => ({
       id: a.id, name: a.name, domainId: a.domainId,
       contractIds: a.contracts.map((c) => c.id),
-      modules: (a.modules || []).map((m) => ({ id: m.id, name: m.name })),
+      modules: (a.modules || []).map((m) => ({ id: m.id, name: m.name, description: m.description || null })),
       requirements: a.requirements.map((r) => ({
         id: r.id, name: r.name, status: r.status, externalId: r.externalId, externalSystem: r.externalSystem,
         moduleId: r.moduleId || null,
