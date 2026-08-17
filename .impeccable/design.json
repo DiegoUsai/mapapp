@@ -1,0 +1,185 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-18T00:00:00Z",
+  "title": "Design System: Mappa Applicativa",
+  "extensions": {
+    "colorMeta": {
+      "navy-ink": {
+        "role": "primary",
+        "displayName": "Navy Ink",
+        "canonical": "oklch(22% 0.03 250)",
+        "tonalRamp": ["#0A0F14", "#111922", "#1B2430", "#2A3642", "#3D4D5C", "#5A6F80", "#7D92A3", "#A4B5C3"]
+      },
+      "warm-paper": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "canonical": "oklch(96.5% 0.005 110)",
+        "tonalRamp": ["#2A2922", "#4A4840", "#6B695F", "#8D8A80", "#AEABA2", "#CFCCC4", "#E7E5DE", "#F5F6F3"]
+      },
+      "parchment": {
+        "role": "neutral",
+        "displayName": "Parchment",
+        "canonical": "oklch(97.5% 0.006 90)",
+        "tonalRamp": ["#2E2C24", "#504D42", "#736F62", "#969284", "#B8B4A7", "#D8D5CA", "#EEECE5", "#FBFAF7"]
+      },
+      "ink-black": {
+        "role": "neutral",
+        "displayName": "Ink Black",
+        "canonical": "oklch(18% 0.01 80)",
+        "tonalRamp": ["#0F0E0A", "#1A1810", "#232019", "#3D3A32", "#58554C", "#747168", "#929085", "#B0ADA4"]
+      },
+      "status-present": {
+        "role": "semantic",
+        "displayName": "Present Green",
+        "canonical": "oklch(50% 0.12 160)",
+        "tonalRamp": ["#0C2118", "#153828", "#1E5039", "#27684B", "#2F7D5C", "#4E9A78", "#78B799", "#A8D4BE"]
+      },
+      "status-progress": {
+        "role": "semantic",
+        "displayName": "Progress Amber",
+        "canonical": "oklch(62% 0.14 70)",
+        "tonalRamp": ["#2E1E06", "#4F340D", "#714C14", "#93641A", "#C97F1E", "#D89A45", "#E5B56E", "#F0D09A"]
+      },
+      "status-backlog": {
+        "role": "semantic",
+        "displayName": "Backlog Gray",
+        "canonical": "oklch(60% 0.02 240)",
+        "tonalRamp": ["#1E2126", "#353A40", "#4D545C", "#666F78", "#8791A0", "#9FABB8", "#B9C3CE", "#D4DBE3"]
+      },
+      "alert-terracotta": {
+        "role": "semantic",
+        "displayName": "Alert Terracotta",
+        "canonical": "oklch(48% 0.14 28)",
+        "tonalRamp": ["#2A0F07", "#481C10", "#662B1B", "#853B26", "#B5482B", "#C96B50", "#DC9078", "#EEB8A5"]
+      },
+      "domain-steel-blue": {
+        "role": "domain",
+        "displayName": "Steel Blue",
+        "canonical": "oklch(42% 0.06 240)",
+        "tonalRamp": ["#0F1820", "#1C2D3E", "#2A425D", "#3E5C76", "#5B7A95", "#7D98B0", "#A2B7CB", "#C8D6E3"]
+      },
+      "domain-muted-plum": {
+        "role": "domain",
+        "displayName": "Muted Plum",
+        "canonical": "oklch(40% 0.08 310)",
+        "tonalRamp": ["#1A1220", "#34253E", "#4E395D", "#6B4E71", "#876B8E", "#A28CAA", "#BEAFC7", "#D9D2E0"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Titolo principale nell'intestazione. Una sola occorrenza per pagina." },
+      "headline": { "displayName": "Headline", "purpose": "Nomi delle entità nelle card e nei pannelli, titoli delle modali." },
+      "body": { "displayName": "Body", "purpose": "Testo corrente, descrizioni, contenuto dei form. Compatto per alta densità." },
+      "label": { "displayName": "Label", "purpose": "Etichette di sezione uppercase con tracking largo." },
+      "mono": { "displayName": "Mono", "purpose": "Etichette contratto, metadati tecnici, codici nell'intestazione." }
+    },
+    "shadows": [
+      { "name": "modal", "value": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)", "purpose": "Elevazione delle modali. L'unica ombra del sistema." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "ease", "purpose": "Transizioni di stato (chip, bottoni, colori)." },
+      { "name": "duration-flash", "value": "400ms", "purpose": "Animazione flash di evidenziazione quando si naviga a un applicativo." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Azione principale: crea applicativo, salva entità.",
+      "html": "<button class=\"ds-btn-primary\">+ Applicativo</button>",
+      "css": ".ds-btn-primary { background: #1B2430; color: #fff; padding: 10px 16px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12.5px; font-weight: 500; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: background 0.2s ease; } .ds-btn-primary:hover { background: #2A3642; } .ds-btn-primary:focus-visible { outline: 2px solid #3A6EA5; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.4; cursor: default; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Azione secondaria: importa/esporta, annulla.",
+      "html": "<button class=\"ds-btn-secondary\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4\"/><polyline points=\"7 10 12 15 17 10\"/><line x1=\"12\" y1=\"15\" x2=\"12\" y2=\"3\"/></svg> Importa / esporta</button>",
+      "css": ".ds-btn-secondary { background: transparent; color: #3D3A34; padding: 8px 12px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12.5px; font-weight: 500; border: 1px solid #D8D5CC; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: border-color 0.2s ease; } .ds-btn-secondary:hover { border-color: #B5B0A3; } .ds-btn-secondary:focus-visible { outline: 2px solid #3A6EA5; outline-offset: 2px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Conferma eliminazione. Solo nei dialoghi di conferma.",
+      "html": "<button class=\"ds-btn-danger\">Elimina</button>",
+      "css": ".ds-btn-danger { background: #B5482B; color: #fff; padding: 8px 12px; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 500; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s ease; } .ds-btn-danger:hover { background: #9D3E25; } .ds-btn-danger:focus-visible { outline: 2px solid #B5482B; outline-offset: 2px; }"
+    },
+    {
+      "name": "Domain Chip",
+      "kind": "chip",
+      "refersTo": "chip-default",
+      "description": "Filtro per dominio. Il colore attivo riflette il colore del dominio.",
+      "html": "<div style=\"display:flex;gap:6px\"><button class=\"ds-chip\">Gestione documentale</button><button class=\"ds-chip ds-chip--active\" style=\"--chip-color:#3E5C76\">Identità digitale</button></div>",
+      "css": ".ds-chip { background: transparent; color: #3D3A34; padding: 6px 12px; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 500; border: 1px solid #D8D5CC; border-radius: 9999px; cursor: pointer; transition: all 0.2s ease; } .ds-chip:hover { border-color: #B5B0A3; } .ds-chip--active { background: var(--chip-color, #1B2430); border-color: var(--chip-color, #1B2430); color: #fff; } .ds-chip:focus-visible { outline: 2px solid #3A6EA5; outline-offset: 2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo di testo standard per form.",
+      "html": "<label class=\"ds-field\"><span class=\"ds-field__label\">Nome applicativo</span><input class=\"ds-input\" placeholder=\"Es. Portale istanze online\" /></label>",
+      "css": ".ds-field { display: block; } .ds-field__label { display: block; margin-bottom: 4px; font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; font-weight: 500; color: #6B655A; } .ds-input { width: 100%; padding: 6px 10px; font-family: 'IBM Plex Sans', sans-serif; font-size: 13.5px; color: #232019; background: #fff; border: 1px solid #D8D5CC; border-radius: 6px; outline: none; box-sizing: border-box; } .ds-input:focus { border-color: #8A8578; } .ds-input::placeholder { color: #B5B0A3; }"
+    },
+    {
+      "name": "Application Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Tessera applicativo nella vista a griglia. Mostra nome, dominio, fornitore, stati requisiti.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card__header\"><span class=\"ds-card__dot\" style=\"background:#3E5C76\"></span><div><div class=\"ds-card__title\">SibarDoc</div><div class=\"ds-card__subtitle\">RTI Sibar · Engineering</div><div class=\"ds-card__badges\"><span class=\"ds-badge ds-badge--trasversale\">Trasversale</span><span class=\"ds-badge ds-badge--core\">CORE</span></div></div></div><div class=\"ds-card__meta\">Contratto Gestione Documentale RAS</div><div class=\"ds-card__bar\"><div class=\"ds-bar\"><div class=\"ds-bar__seg\" style=\"width:60%;background:#2F7D5C\"></div><div class=\"ds-bar__seg\" style=\"width:25%;background:#C97F1E\"></div><div class=\"ds-bar__seg\" style=\"width:15%;background:#8791A0\"></div></div><div class=\"ds-card__count\">12 requisiti censiti</div></div></div>",
+      "css": ".ds-card { background: #fff; border: 1px solid #E2DFD6; border-radius: 8px; padding: 16px; font-family: 'IBM Plex Sans', sans-serif; } .ds-card__header { display: flex; align-items: flex-start; gap: 10px; } .ds-card__dot { width: 10px; height: 10px; border-radius: 4px; flex-shrink: 0; margin-top: 5px; } .ds-card__title { font-family: 'IBM Plex Serif', serif; font-size: 15px; font-weight: 600; color: #232019; } .ds-card__subtitle { font-size: 12px; color: #8A8578; margin-top: 2px; } .ds-card__badges { display: flex; gap: 4px; margin-top: 4px; } .ds-badge { display: inline-flex; align-items: center; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 500; color: #fff; } .ds-badge--trasversale { background: #2F7D5C; } .ds-badge--core { background: #C97F1E; } .ds-badge--verticale { background: #8A8578; } .ds-card__meta { margin-top: 8px; display: inline-block; padding: 2px 6px; border-radius: 4px; background: #F0EEE7; color: #6B655A; font-family: 'IBM Plex Mono', monospace; font-size: 11px; } .ds-card__bar { margin-top: 12px; } .ds-bar { display: flex; height: 6px; border-radius: 9999px; background: #E7E5DE; overflow: hidden; } .ds-bar__seg { height: 100%; } .ds-card__count { margin-top: 6px; font-size: 12px; color: #8A8578; }"
+    },
+    {
+      "name": "Status Pill",
+      "kind": "chip",
+      "refersTo": "status-pill",
+      "description": "Indicatore di stato inline per requisiti e integrazioni.",
+      "html": "<div style=\"display:flex;gap:8px\"><span class=\"ds-pill\" style=\"--pill-color:#2F7D5C\"><span class=\"ds-pill__dot\"></span>Presente</span><span class=\"ds-pill\" style=\"--pill-color:#C97F1E\"><span class=\"ds-pill__dot\"></span>In sviluppo</span><span class=\"ds-pill\" style=\"--pill-color:#8791A0\"><span class=\"ds-pill__dot\"></span>Backlog</span></div>",
+      "css": ".ds-pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 9999px; font-family: 'IBM Plex Sans', sans-serif; font-size: 11px; font-weight: 500; color: var(--pill-color); background: color-mix(in srgb, var(--pill-color) 10%, transparent); } .ds-pill__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pill-color); }"
+    },
+    {
+      "name": "Modal",
+      "kind": "custom",
+      "refersTo": "modal",
+      "description": "Dialogo modale per creazione e modifica entità.",
+      "html": "<div class=\"ds-overlay\"><div class=\"ds-modal\"><div class=\"ds-modal__header\"><h3 class=\"ds-modal__title\">Nuovo contratto</h3><button class=\"ds-modal__close\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"#8A8578\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><line x1=\"18\" y1=\"6\" x2=\"6\" y2=\"18\"/><line x1=\"6\" y1=\"6\" x2=\"18\" y2=\"18\"/></svg></button></div><div class=\"ds-modal__body\"><p style=\"color:#6B655A;font-size:13px\">Contenuto del form...</p></div></div></div>",
+      "css": ".ds-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; padding: 16px; } .ds-modal { background: #fff; border-radius: 8px; padding: 20px; width: 100%; max-width: 28rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); } .ds-modal__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; } .ds-modal__title { font-family: 'IBM Plex Serif', serif; font-size: 15px; font-weight: 600; color: #232019; margin: 0; } .ds-modal__close { background: none; border: none; cursor: pointer; padding: 4px; } .ds-modal__close:hover { opacity: 0.7; } .ds-modal__body { font-family: 'IBM Plex Sans', sans-serif; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Cartografia Operativa",
+    "overview": "L'atmosfera visiva di Mapapp unisce l'autorità e la leggibilità di una carta topografica istituzionale con lo scopo direzionale di una cabina di regia: non si limita a descrivere l'ecosistema applicativo, ma orienta le decisioni e previene i passi falsi. La palette terrosa e contenuta — pietra, inchiostro, carta invecchiata — comunica solidità senza freddo tecnicismo, mentre la tipografia IBM Plex bilancia carattere editoriale e rigore funzionale.\n\nLa densità informativa è alta (domini, stati, integrazioni, sovrapposizioni) ma ogni strato ha il suo registro visivo: i colori di dominio identificano le aree, gli indicatori di stato segnalano il progresso, gli archi sulla mappa raccontano i flussi. Nulla decora, tutto informa. L'interfaccia è calda e accessibile — uno strumento tecnico che non rinuncia a un carattere umano — ma ogni scelta ornamentale è subordinata alla chiarezza del dato.",
+    "keyCharacteristics": [
+      "Palette terrosa e istituzionale: pietre calde, inchiostro profondo, carta naturale",
+      "Tipografia a tre voci: Serif per i titoli, Sans per il corpo, Mono per i metadati tecnici",
+      "Superfici piatte con stratificazione tonale, ombre solo sulle modali",
+      "Componenti sobri con angoli appena smussati e bordi sottili",
+      "Colori semantici per stati e domini, mai decorativi"
+    ],
+    "rules": [
+      { "name": "The Earthy Authority Rule", "body": "Nessun colore nell'interfaccia esce dalla gamma terrosa. I colori brillanti, saturi o neon sono esclusi: la credibilità istituzionale viene dalla sobrietà, non dall'impatto visivo.", "section": "colors" },
+      { "name": "The Status-Only Saturation Rule", "body": "I colori più saturi della palette sono riservati agli indicatori di stato (presente/in sviluppo/backlog) e alle azioni distruttive. Nessun elemento decorativo raggiunge la stessa saturazione.", "section": "colors" },
+      { "name": "The Three Voices Rule", "body": "Ogni testo dell'interfaccia appartiene a una delle tre voci (Serif/Sans/Mono). Non si mescolano all'interno dello stesso blocco. La Serif non scende sotto i 15px; la Mono non sale sopra gli 11px.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Le ombre appaiono solo sulle modali (shadow-xl) e sull'overlay nero al 30%. Nessun altro elemento dell'interfaccia ha un'ombra. Se un componente deve emergere, usa un bordo più scuro o un tono di sfondo più chiaro, mai un'ombra.", "section": "elevation" },
+      { "name": "The Shape-Tells-Role Rule", "body": "La rotondità dell'angolo segnala il tipo di elemento. Non mescolare: un bottone non diventa rounded-full (quello è un chip), un chip non diventa rounded-md (quello è un bottone).", "section": "shapes" }
+    ],
+    "dos": [
+      "Do usare i colori di stato solo per indicare stato (presente/in sviluppo/backlog). Mai come decorazione.",
+      "Do mantenere la separazione delle tre voci tipografiche: Serif per i nomi, Sans per il corpo, Mono per i metadati tecnici.",
+      "Do usare la stratificazione tonale (sfondo pagina → sfondo secondario → bianco) per creare profondità senza ombre.",
+      "Do riservare il Navy Ink (#1B2430) pieno alle azioni primarie e all'intestazione. Nessun altro elemento usa lo stesso sfondo pieno.",
+      "Do mantenere i colori di dominio alla stessa saturazione e luminosità: nessun dominio deve dominare visivamente sugli altri."
+    ],
+    "donts": [
+      "Don't aggiungere ombre a elementi che non sono modali. La profondità è tonale, non proiettata.",
+      "Don't usare colori fuori dalla gamma terrosa. Nessun blu brillante, verde neon, o viola saturo.",
+      "Don't usare rounded-full su bottoni d'azione (quello è il registro dei chip e delle pill). I bottoni sono rounded-md.",
+      "Don't mescolare voci tipografiche nello stesso blocco (es. Serif e Mono nella stessa riga).",
+      "Don't usare il nero puro (#000000). Il nero più scuro è Ink Black (#232019)."
+    ]
+  }
+}
