@@ -295,6 +295,7 @@ export default function MappaApplicativa({ userEmail }) {
   const [showNewContract, setShowNewContract] = useState(false);
   const [showNewDomain, setShowNewDomain] = useState(false);
   const [showImportExport, setShowImportExport] = useState(false);
+  const [editingContractId, setEditingContractId] = useState(null);
   const cardRefs = useRef({});
 
   const refresh = async () => {
@@ -320,11 +321,28 @@ export default function MappaApplicativa({ userEmail }) {
 
   const contracts = data.contracts;
 
+  const domainsInUse = data.domains.filter((d) =>
+    data.applications.some((a) => a.domainId === d.id)
+  );
+
+  const vendorsInUse = data.vendors.filter((v) =>
+    data.applications.some((a) => vendorIdsOfApp(a).includes(v.id))
+  );
+
+  const matchesQuery = (app, q) => {
+    const lowerQ = q.toLowerCase();
+    if (app.name.toLowerCase().includes(lowerQ)) return true;
+    if (app.requirements?.some((r) => r.name.toLowerCase().includes(lowerQ))) return true;
+    if (app.modules?.some((m) => m.name.toLowerCase().includes(lowerQ))) return true;
+    if (app.integrations?.some((i) => (i.label || "").toLowerCase().includes(lowerQ))) return true;
+    return false;
+  };
+
   const filtered = data.applications.filter((app) => {
     if (domainFilter && app.domainId !== domainFilter) return false;
     if (vendorFilter && !vendorIdsOfApp(app).includes(vendorFilter)) return false;
     if (contractFilter && !app.contracts.some((c) => c.id === contractFilter)) return false;
-    if (query && !app.name.toLowerCase().includes(query.toLowerCase())) return false;
+    if (query && !matchesQuery(app, query)) return false;
     return true;
   });
 
@@ -349,6 +367,7 @@ export default function MappaApplicativa({ userEmail }) {
   };
 
   const createContract = (payload) => withSaving(async () => { await api("/api/contracts", "POST", payload); setShowNewContract(false); });
+  const updateContract = (contractId, payload) => withSaving(async () => { await api(`/api/contracts/${contractId}`, "PATCH", payload); setEditingContractId(null); });
   const createDomain = (payload) => withSaving(async () => {
     const color = COLOR_PALETTE[data.domains.length % COLOR_PALETTE.length];
     await api("/api/domains", "POST", { ...payload, color });
@@ -359,7 +378,8 @@ export default function MappaApplicativa({ userEmail }) {
     setShowNewApp(false);
     setExpanded(app.id);
   });
-  const openNewDomain = () => { setShowNewApp(false); setShowNewDomain(true); };
+  const updateApp = (appId, payload) => withSaving(async () => { await api(`/api/applications/${appId}`, "PATCH", payload); });
+  const openNewDomain = () => { setShowNewDomain(true); };
 
   const deleteApp = (appId) => withSaving(async () => {
     await api(`/api/applications/${appId}`, "DELETE");
@@ -384,12 +404,15 @@ export default function MappaApplicativa({ userEmail }) {
     onDeleteIntegration: deleteIntegration,
     onAddFeature: addFeature,
     onUpdateFeature: updateFeature,
+    onUpdateApp: updateApp,
     onAddIntegration: addIntegration,
     onUpdateIntegration: updateIntegration,
     onAddIntegrationType: addIntegrationType,
     onAddModule: addModule,
     onUpdateModule: updateModule,
     onDeleteModule: deleteModule,
+    domains: data.domains,
+    contracts: data.contracts,
   };
 
   return (
@@ -412,7 +435,7 @@ export default function MappaApplicativa({ userEmail }) {
           <div className="flex items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="mr-1 text-[12px] font-medium uppercase tracking-wide" style={{ color: "#8A8578" }}>Dominio</span>
-              {data.domains.map((d) => (
+              {domainsInUse.map((d) => (
                 <Chip key={d.id} active={domainFilter === d.id} color={d.color} onClick={() => setDomainFilter(domainFilter === d.id ? null : d.id)}>{d.name}</Chip>
               ))}
               <button onClick={() => setShowNewDomain(true)} className="flex items-center gap-1 text-[12.5px] font-medium underline underline-offset-2" style={{ color: "#6B655A" }}>
@@ -434,7 +457,7 @@ export default function MappaApplicativa({ userEmail }) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <span className="mr-1 text-[12px] font-medium uppercase tracking-wide" style={{ color: "#8A8578" }}>Fornitore</span>
-            {data.vendors.map((v) => (
+            {vendorsInUse.map((v) => (
               <Chip key={v.id} active={vendorFilter === v.id} color="#1B2430" onClick={() => setVendorFilter(vendorFilter === v.id ? null : v.id)}>{v.name}</Chip>
             ))}
           </div>
@@ -446,6 +469,11 @@ export default function MappaApplicativa({ userEmail }) {
               </select>
               <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-2.5" style={{ color: "#8A8578" }} />
             </div>
+            {contractFilter && (
+              <button onClick={() => setEditingContractId(contractFilter)} className="p-1">
+                <Pencil size={13} style={{ color: "#B5B0A3" }} />
+              </button>
+            )}
             <button onClick={() => setShowNewContract(true)} className="flex items-center gap-1 text-[12.5px] font-medium underline underline-offset-2" style={{ color: "#6B655A" }}>
               <Plus size={12} /> Nuovo contratto
             </button>
@@ -554,9 +582,10 @@ export default function MappaApplicativa({ userEmail }) {
 
       {showNewApp && (
         <NewAppModal domains={data.domains} contracts={data.contracts} onClose={() => setShowNewApp(false)} onSave={createApp}
-          onOpenNewDomain={openNewDomain} onOpenNewContract={() => { setShowNewApp(false); setShowNewContract(true); }} />
+          onOpenNewDomain={openNewDomain} onOpenNewContract={() => setShowNewContract(true)} />
       )}
       {showNewContract && <NewContractModal vendors={data.vendors} onClose={() => setShowNewContract(false)} onSave={createContract} onAddVendor={addVendor} />}
+      {editingContractId && <NewContractModal vendors={data.vendors} initial={contracts.find((c) => c.id === editingContractId)} onClose={() => setEditingContractId(null)} onSave={(payload) => updateContract(editingContractId, payload)} onAddVendor={addVendor} />}
       {showNewDomain && <NewDomainModal onClose={() => setShowNewDomain(false)} onSave={createDomain} />}
       {showImportExport && <ImportExportModal data={data} onClose={() => setShowImportExport(false)} onImport={importDataset} />}
     </div>

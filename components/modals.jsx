@@ -247,6 +247,9 @@ export function NewIntegrationModal({ app, apps, types, modules, initial, onAddT
   const [status, setStatus] = useState(initial?.status || "backlog");
   const [label, setLabel] = useState(initial?.label || "");
   const [appModuleId, setAppModuleId] = useState((initialDirection === "out" ? initial?.fromModuleId : initial?.toModuleId) || "");
+  const [targetModuleId, setTargetModuleId] = useState((initialDirection === "out" ? initial?.toModuleId : initial?.fromModuleId) || "");
+  const targetApp = apps.find((a) => a.id === target);
+  const targetModules = targetApp?.modules || [];
   return (
     <Modal title={initial ? `Modifica integrazione · ${app.name}` : `Nuova integrazione · ${app.name}`} onClose={onClose}>
       <div className="space-y-3">
@@ -257,10 +260,18 @@ export function NewIntegrationModal({ app, apps, types, modules, initial, onAddT
           </select>
         </Field>
         <Field label="Applicativo">
-          <select value={target} onChange={(e) => setTarget(e.target.value)} className={inputClass} style={inputStyle}>
+          <select value={target} onChange={(e) => { setTarget(e.target.value); setTargetModuleId(""); }} className={inputClass} style={inputStyle}>
             {others.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         </Field>
+        {targetModules.length > 0 && (
+          <Field label={`Modulo di ${targetApp?.name} coinvolto (opzionale)`}>
+            <select value={targetModuleId} onChange={(e) => setTargetModuleId(e.target.value)} className={inputClass} style={inputStyle}>
+              <option value="">Livello di default dell'applicativo</option>
+              {targetModules.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+          </Field>
+        )}
         {modules.length > 0 && (
           <Field label={`Modulo di ${app.name} coinvolto (opzionale)`}>
             <select value={appModuleId} onChange={(e) => setAppModuleId(e.target.value)} className={inputClass} style={inputStyle}>
@@ -285,8 +296,8 @@ export function NewIntegrationModal({ app, apps, types, modules, initial, onAddT
           onClick={() => onSave({
             fromId: direction === "out" ? app.id : target,
             toId: direction === "out" ? target : app.id,
-            fromModuleId: direction === "out" ? (appModuleId || null) : null,
-            toModuleId: direction === "in" ? (appModuleId || null) : null,
+            fromModuleId: direction === "out" ? (appModuleId || null) : (targetModuleId || null),
+            toModuleId: direction === "out" ? (targetModuleId || null) : (appModuleId || null),
             typeId, status, label: label.trim(),
           })}
           className="mt-2 w-full rounded-md py-2 text-[13.5px] font-medium text-white disabled:opacity-40" style={{ backgroundColor: "#1B2430" }}>

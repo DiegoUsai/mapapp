@@ -5,14 +5,14 @@ import {
   StatusPill, StatusFilterChips, ConfirmDialog,
   sortByStatus, sharedOf, integrationsFor, endpointLabel,
 } from "./shared";
-import { NewFeatureModal, NewIntegrationModal, NewModuleModal } from "./modals";
+import { NewFeatureModal, NewIntegrationModal, NewModuleModal, NewAppModal } from "./modals";
 
 export function AppDetailPanel({
-  app, apps, integrations, integrationTypes,
+  app, apps, integrations, integrationTypes, domains, contracts,
   onJump, onClose, saving,
   onDeleteApp, onDeleteFeature, onDeleteIntegration,
   onAddFeature, onAddIntegration, onAddIntegrationType,
-  onUpdateFeature, onUpdateIntegration,
+  onUpdateFeature, onUpdateIntegration, onUpdateApp,
   onAddModule, onUpdateModule, onDeleteModule,
 }) {
   const [tab, setTab] = useState("detail");
@@ -21,7 +21,9 @@ export function AppDetailPanel({
   const [confirm, setConfirm] = useState(null);
   const [drillDownModuleId, setDrillDownModuleId] = useState(null);
 
-  const { outgoing, incoming } = integrationsFor(integrations, app.id);
+  const { outgoing: allOutgoing, incoming: allIncoming } = integrationsFor(integrations, app.id);
+  const outgoing = allOutgoing.filter((i) => i.fromModuleId === null);
+  const incoming = allIncoming.filter((i) => i.toModuleId === null);
   const hasIntegrations = outgoing.length > 0 || incoming.length > 0;
   const modules = app.modules || [];
 
@@ -154,16 +156,23 @@ export function AppDetailPanel({
 
   return (
     <div>
-      {/* Tab selector */}
-      <div className="mb-4 flex w-fit gap-1 rounded-md border p-0.5" style={{ borderColor: "#D8D5CC" }}>
-        <button onClick={() => setTab("detail")} className="rounded px-3 py-1 text-[12.5px] font-medium"
-          style={tab === "detail" ? { backgroundColor: "#1B2430", color: "#fff" } : { color: "#6B655A" }}>
-          Dettaglio
-        </button>
-        <button onClick={() => setTab("integrations")} className="rounded px-3 py-1 text-[12.5px] font-medium"
-          style={tab === "integrations" ? { backgroundColor: "#1B2430", color: "#fff" } : { color: "#6B655A" }}>
-          Con chi è integrato
-        </button>
+      {/* Header with tabs and edit button */}
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex w-fit gap-1 rounded-md border p-0.5" style={{ borderColor: "#D8D5CC" }}>
+          <button onClick={() => setTab("detail")} className="rounded px-3 py-1 text-[12.5px] font-medium"
+            style={tab === "detail" ? { backgroundColor: "#1B2430", color: "#fff" } : { color: "#6B655A" }}>
+            Dettaglio
+          </button>
+          <button onClick={() => setTab("integrations")} className="rounded px-3 py-1 text-[12.5px] font-medium"
+            style={tab === "integrations" ? { backgroundColor: "#1B2430", color: "#fff" } : { color: "#6B655A" }}>
+            Con chi è integrato
+          </button>
+        </div>
+        {onUpdateFeature && (
+          <button onClick={() => setModal({ type: "editApp" })} className="p-1">
+            <Pencil size={14} style={{ color: "#B5B0A3" }} />
+          </button>
+        )}
       </div>
 
       {tab === "detail" && (
@@ -356,6 +365,10 @@ export function AppDetailPanel({
       )}
 
       {/* Modals */}
+      {modal?.type === "editApp" && onUpdateApp && (
+        <NewAppModal domains={domains} contracts={contracts} initial={app} onClose={() => setModal(null)}
+          onSave={(payload) => { onUpdateApp(app.id, payload); setModal(null); }} />
+      )}
       {modal?.type === "addFeature" && (
         <NewFeatureModal app={app} apps={apps} modules={modules} onClose={() => setModal(null)}
           onSave={(payload) => { onAddFeature(app.id, payload); setModal(null); }} />
