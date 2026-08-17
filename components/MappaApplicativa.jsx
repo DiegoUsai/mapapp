@@ -98,18 +98,70 @@ function RelationMap({ apps, allApps, integrations, integrationTypes, selected, 
           {nodes.map((n) => {
             const dim = connectedIds && !connectedIds.has(n.id);
             const isSelected = selected === n.id;
+            const selectedAppData = isSelected ? apps.find((a) => a.id === n.id) : null;
+            const modules = selectedAppData?.modules || [];
             return (
-              <g key={n.id} transform={`translate(${n.x},${n.y})`} onClick={() => onSelect(isSelected ? null : n.id)} style={{ cursor: "pointer" }} opacity={dim ? 0.3 : 1}>
-                <circle r={30} fill={n.domain?.color || "#8791A0"} stroke={isSelected ? "#232019" : "#fff"} strokeWidth={isSelected ? 2.5 : 2} />
-                {n.domain?.core && (
-                  <circle r={30} fill="none" stroke={CORE_BADGE_BG} strokeWidth="2" strokeDasharray="3,2" opacity="0.8" />
-                )}
-                <text textAnchor="middle" dy={4} fontSize="9.5" fontWeight="600" fill="#fff" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
-                  {n.name.length > 14 ? n.name.slice(0, 13) + "…" : n.name}
-                </text>
-                <title>{n.name}</title>
+              <g key={n.id}>
+                {/* App node */}
+                <g transform={`translate(${n.x},${n.y})`} onClick={() => onSelect(isSelected ? null : n.id)} style={{ cursor: "pointer" }} opacity={dim ? 0.3 : 1}>
+                  <circle r={30} fill={n.domain?.color || "#8791A0"} stroke={isSelected ? "#232019" : "#fff"} strokeWidth={isSelected ? 2.5 : 2} />
+                  {n.domain?.core && (
+                    <circle r={30} fill="none" stroke={CORE_BADGE_BG} strokeWidth="2" strokeDasharray="3,2" opacity="0.8" />
+                  )}
+                  <text textAnchor="middle" dy={4} fontSize="9.5" fontWeight="600" fill="#fff" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                    {n.name.length > 14 ? n.name.slice(0, 13) + "…" : n.name}
+                  </text>
+                  <title>{n.name}</title>
+                </g>
+                {/* Module drill-down */}
+                {isSelected && modules.length > 0 && modules.map((mod, idx) => {
+                  const angle = (idx / modules.length) * 2 * Math.PI;
+                  const radius = 60;
+                  const mx = n.x + radius * Math.cos(angle);
+                  const my = n.y + radius * Math.sin(angle);
+                  return (
+                    <g key={`mod-${mod.id}`} transform={`translate(${mx},${my})`} opacity={0.85}>
+                      <circle r={12} fill="#E8D7C8" stroke="#8A8578" strokeWidth={1} />
+                      <text textAnchor="middle" dy={2} fontSize="7" fontWeight="600" fill="#3D3A34" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
+                        {mod.name.length > 8 ? mod.name.slice(0, 7) + "…" : mod.name}
+                      </text>
+                      <title>{mod.name}</title>
+                    </g>
+                  );
+                })}
               </g>
             );
+          })}
+          {/* Module integration arcs */}
+          {selected && apps.find((a) => a.id === selected)?.modules?.map((mod, modIdx) => {
+            const selectedAppNode = nodes.find((n) => n.id === selected);
+            if (!selectedAppNode) return null;
+            const angle = (modIdx / (apps.find((a) => a.id === selected)?.modules?.length || 1)) * 2 * Math.PI;
+            const radius = 60;
+            const mx = selectedAppNode.x + radius * Math.cos(angle);
+            const my = selectedAppNode.y + radius * Math.sin(angle);
+            return integrations
+              .filter((i) => (i.fromModuleId === mod.id || i.toModuleId === mod.id))
+              .map((i, idx) => {
+                const isFromMod = i.fromModuleId === mod.id;
+                const otherAppId = isFromMod ? i.toId : i.fromId;
+                const otherAppNode = nodes.find((n) => n.id === otherAppId);
+                if (!otherAppNode) return null;
+                const dim = connectedIds && !(connectedIds.has(selected) && connectedIds.has(otherAppId));
+                const stroke = i.type?.color || "#2F6F76";
+                return (
+                  <g key={`mod-arc-${mod.id}-${i.id}`} opacity={dim ? 0.15 : 0.6}>
+                    <line x1={mx} y1={my} x2={otherAppNode.x} y2={otherAppNode.y}
+                      stroke={stroke} strokeWidth={1.8} markerEnd={`url(#arrow-${i.type?.id || "default"})`}>
+                      <title>{i.type ? `${i.type.name} — ${i.label} (${STATUS[i.status]?.label || i.status})` : i.label}</title>
+                    </line>
+                    <circle cx={(mx + otherAppNode.x) / 2} cy={(my + otherAppNode.y) / 2} r={4}
+                      fill={STATUS[i.status]?.color || "#8791A0"} stroke="#fff" strokeWidth={1}>
+                      <title>{STATUS[i.status]?.label || i.status}</title>
+                    </circle>
+                  </g>
+                );
+              });
           })}
         </svg>
       </div>
