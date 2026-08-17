@@ -384,6 +384,8 @@ export default function MappaApplicativa({ userEmail }) {
   const matchesQuery = (app, q) => {
     const lowerQ = q.toLowerCase();
     if (app.name.toLowerCase().includes(lowerQ)) return true;
+    if (app.domain?.name.toLowerCase().includes(lowerQ)) return true;
+    if (app.contracts?.some((c) => c.name.toLowerCase().includes(lowerQ))) return true;
     if (app.requirements?.some((r) => r.name.toLowerCase().includes(lowerQ))) return true;
     if (app.modules?.some((m) => m.name.toLowerCase().includes(lowerQ))) return true;
     if (app.integrations?.some((i) => (i.label || "").toLowerCase().includes(lowerQ))) return true;
@@ -531,7 +533,7 @@ export default function MappaApplicativa({ userEmail }) {
             </button>
             <div className="relative flex-1 min-w-[200px]">
               <Search size={14} className="absolute left-3 top-2.5" style={{ color: "#8A8578" }} />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cerca applicativo…" className="w-full rounded-md border bg-white py-1.5 pl-8 pr-3 text-[13px] outline-none" style={{ borderColor: "#D8D5CC", color: "#3D3A34" }} />
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cerca…" className="w-full rounded-md border bg-white py-1.5 pl-8 pr-3 text-[13px] outline-none" style={{ borderColor: "#D8D5CC", color: "#3D3A34" }} />
             </div>
             {(domainFilter || vendorFilter || contractFilter || query) && (
               <button onClick={() => { setDomainFilter(null); setVendorFilter(null); setContractFilter(""); setQuery(""); }} className="text-[13px] font-medium underline underline-offset-2" style={{ color: "#6B655A" }}>

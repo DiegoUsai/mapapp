@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma";
 export async function PATCH(req, { params }) {
   const { id } = await params;
   const body = await req.json();
-  const module_ = await prisma.module.update({ where: { id }, data: { name: body.name } });
+  const data = { name: body.name };
+  if (body.description !== undefined) data.description = body.description || null;
+  const module_ = await prisma.module.update({ where: { id }, data });
   return NextResponse.json(module_);
 }
 

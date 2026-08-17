@@ -13,6 +13,8 @@ export async function PATCH(req, { params }) {
 
 export async function DELETE(_req, { params }) {
   const { id } = await params;
+  const appCount = await prisma.application.count({ where: { contracts: { some: { id } } } });
+  if (appCount > 0) return NextResponse.json({ error: "Contratto in uso da applicativi collegati" }, { status: 409 });
   try {
     await prisma.contract.delete({ where: { id } });
   } catch (err) {

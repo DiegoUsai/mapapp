@@ -199,6 +199,9 @@ export function AppDetailPanel({
                         )}
                       </div>
                     </button>
+                    {mod.description && (
+                      <div className="px-3 pt-1.5 text-[12px]" style={{ color: "#8A8578" }}>{mod.description}</div>
+                    )}
                     <ul className="space-y-2 px-3 py-2">
                       {modReqs.length === 0 && (
                         <li className="py-1 text-[12px]" style={{ color: "#8A8578" }}>Nessun requisito in questo modulo</li>

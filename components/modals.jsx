@@ -165,6 +165,7 @@ export function NewAppModal({ domains, contracts, initial, onClose, onSave, onOp
 
 export function NewModuleModal({ initial, onClose, onSave }) {
   const [name, setName] = useState(initial?.name || "");
+  const [description, setDescription] = useState(initial?.description || "");
   const canSave = name.trim();
   return (
     <Modal title={initial ? "Modifica modulo" : "Nuovo modulo"} onClose={onClose}>
@@ -172,7 +173,10 @@ export function NewModuleModal({ initial, onClose, onSave }) {
         <Field label="Nome modulo">
           <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. Gateway di protocollazione" />
         </Field>
-        <button disabled={!canSave} onClick={() => canSave && onSave({ name: name.trim() })}
+        <Field label="Descrizione (opzionale)">
+          <textarea value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} style={{ ...inputStyle, minHeight: 60 }} placeholder="Scopo e responsabilità del modulo" />
+        </Field>
+        <button disabled={!canSave} onClick={() => canSave && onSave({ name: name.trim(), description: description.trim() || null })}
           className="mt-2 w-full rounded-md py-2 text-[13.5px] font-medium text-white disabled:opacity-40" style={{ backgroundColor: "#1B2430" }}>
           {initial ? "Salva modulo" : "Crea modulo"}
         </button>
@@ -248,6 +252,7 @@ export function NewIntegrationModal({ app, apps, types, modules, initial, onAddT
   const [label, setLabel] = useState(initial?.label || "");
   const [appModuleId, setAppModuleId] = useState((initialDirection === "out" ? initial?.fromModuleId : initial?.toModuleId) || "");
   const [targetModuleId, setTargetModuleId] = useState((initialDirection === "out" ? initial?.toModuleId : initial?.fromModuleId) || "");
+  const [generateRequirement, setGenerateRequirement] = useState(true);
   const targetApp = apps.find((a) => a.id === target);
   const targetModules = targetApp?.modules || [];
   return (
@@ -291,6 +296,12 @@ export function NewIntegrationModal({ app, apps, types, modules, initial, onAddT
         <Field label="Descrizione della relazione">
           <input value={label} onChange={(e) => setLabel(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. Richiama l'API di protocollazione" />
         </Field>
+        {!initial && (
+          <label className="flex items-center gap-2 text-[12.5px]" style={{ color: "#3D3A34" }}>
+            <input type="checkbox" checked={generateRequirement} onChange={(e) => setGenerateRequirement(e.target.checked)} />
+            Genera automaticamente un requisito dall'integrazione
+          </label>
+        )}
         <button
           disabled={!target || !typeId || !label.trim()}
           onClick={() => onSave({
@@ -299,6 +310,7 @@ export function NewIntegrationModal({ app, apps, types, modules, initial, onAddT
             fromModuleId: direction === "out" ? (appModuleId || null) : (targetModuleId || null),
             toModuleId: direction === "out" ? (targetModuleId || null) : (appModuleId || null),
             typeId, status, label: label.trim(),
+            ...(!initial && { generateRequirement }),
           })}
           className="mt-2 w-full rounded-md py-2 text-[13.5px] font-medium text-white disabled:opacity-40" style={{ backgroundColor: "#1B2430" }}>
           {initial ? "Salva integrazione" : "Aggiungi integrazione"}
