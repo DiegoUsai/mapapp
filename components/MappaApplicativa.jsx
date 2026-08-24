@@ -7,12 +7,9 @@ import {
   Search, AlertTriangle, Layers, ChevronDown, ArrowLeftRight,
   Network, LayoutGrid, Plus, Loader2, Upload, Download, FileSpreadsheet, LogOut,
 } from "lucide-react";
-import {
-  api, STATUS, COLOR_PALETTE, TYPE_PALETTE,
-  Chip, StatusBar, Modal, sharedOf, integrationsFor,
-  vendorNamesOfApp, vendorIdsOfApp, contractsLabel,
-  DOMAIN_AMBITI, AMBITO_COLORS, CORE_BADGE_BG,
-} from "./shared";
+import { STATUS, COLOR_PALETTE, TYPE_PALETTE, DOMAIN_AMBITI, AMBITO_COLORS, CORE_BADGE_BG } from "./constants";
+import { api, sharedOf, integrationsFor, vendorNamesOfApp, vendorIdsOfApp, contractsLabel } from "./data-helpers";
+import { Chip, StatusBar, Modal } from "./ui-primitives";
 import { NewContractModal, NewDomainModal, NewAppModal } from "./modals";
 import { AppDetailPanel } from "./AppDetailPanel";
 

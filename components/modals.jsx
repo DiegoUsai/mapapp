@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { Modal, Field, ComboAdd, inputClass, inputStyle, STATUS, DOMAIN_AMBITI } from "./shared";
+import { STATUS, DOMAIN_AMBITI, inputClass, inputStyle } from "./constants";
+import { Modal, Field, ComboAdd } from "./ui-primitives";
 import { COFOG_OPTIONS, cofogCleanLabel } from "@/lib/cofog";
 
 export function RenameModal({ title, label, initialValue, placeholder, saveLabel = "Salva", onClose, onSave }) {

@@ -1,10 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Trash2, Plus, Pencil, X, Tag, Link2 } from "lucide-react";
-import {
-  StatusPill, StatusFilterChips, ConfirmDialog,
-  sortByStatus, sharedOf, integrationsFor, endpointLabel,
-} from "./shared";
+import { sortByStatus, sharedOf, integrationsFor, endpointLabel } from "./data-helpers";
+import { StatusPill, StatusFilterChips, ConfirmDialog } from "./ui-primitives";
 import { NewFeatureModal, NewIntegrationModal, NewModuleModal, NewAppModal } from "./modals";
 
 export function AppDetailPanel({

@@ -20,6 +20,8 @@ Il rilevamento delle duplicazioni si fonda sulla **descrizione** del requisito, 
 
 A questo si affianca un livello di **allineamento semantico** dei domini alle nomenclature ufficiali italiane ed europee (codici COFOG per le funzioni di governo, Eurovoc per i temi dei dati, in coerenza con le linee guida AgID). Questo allineamento non contraddice la scelta dei confini labili: i codici standard sono etichette descrittive che arricchiscono il dominio e ne rafforzano la riconoscibilità istituzionale, non vincoli che impongono a un requisito di stare in una casella e una sola. Allo stesso modo, la caratterizzazione del dominio per **ambito** (verticale o trasversale) e per **criticità** (core o non core) descrive la natura d'uso e l'importanza del dominio senza trasformarsi in una gerarchia rigida.
 
+Il modello dati è allineato alle astrazioni del **C4 model** ([c4model.com](https://c4model.com/)): l'Applicativo corrisponde al *Software System*, il Modulo al *Container*, l'Integrazione alla *Relationship*. Il Dominio non è un livello gerarchico del C4 (che non lo prevede come concetto formale): è un raggruppamento funzionale di Applicativi — una lente di classificazione trasversale coerente con la tassonomia PA — e corrisponde al concetto di *Domain* nativo di Backstage. Il *System Landscape* del C4 — la vista di tutti i sistemi in un'organizzazione — corrisponde alla **vista radice della mappa senza filtri applicati**, non a un'entità del modello dati.
+
 ## Modello dati
 
 Le entità e le loro relazioni. I campi elencati sono quelli funzionalmente necessari; identificativi tecnici e metadati (date di creazione e simili) sono lasciati all'implementazione.
@@ -32,9 +34,34 @@ Le entità e le loro relazioni. I campi elencati sono quelli funzionalmente nece
 
 **Tipo di integrazione** — categoria di una relazione tecnica tra applicazioni (es. *editing documentale*, *protocollazione*). Campi: nome, colore. È una tassonomia estendibile dall'utente.
 
-**Applicativo** — l'unità centrale, rappresentata come tessera nella vista a griglia e come nodo nella vista a mappa. Campi: nome, dominio di appartenenza, uno o più **contratti**. Un applicativo può vivere in più contratti contemporaneamente, perché può essere frammentato per dominio o per competenze (esempio: un contratto per la progettazione UI/UX e un altro per la realizzazione del front-end). Il fornitore di un applicativo non è un dato diretto: si deriva dall'insieme dei contratti collegati, e può quindi risultare più di uno. Un applicativo può inoltre essere articolato in **moduli** (vedi sotto).
+**Applicativo** — l'unità centrale, rappresentata come tessera nella vista a griglia e come nodo nella vista a mappa. Campi: nome, dominio di appartenenza, **`scope`**, uno o più **contratti**, e uno **slug**.
 
-**Modulo** — una parte funzionale distinta di un applicativo (esempio: il modulo gateway che espone i servizi di protocollazione di SibarDoc, o il modulo identity provider dello stesso applicativo). Campi: nome, descrizione, applicativo di appartenenza. Un modulo appartiene sempre a **un solo applicativo**, ma le sue integrazioni possono puntare verso altri applicativi o loro moduli: è così che, per esempio, l'identity provider di SibarDoc resta un suo modulo pur essendo usato da molti altri applicativi che vi si integrano. La modularità è ciò che rende leggibile "chi parla con chi": senza di essa, il fatto che il gateway di un applicativo dialoghi con decine di sistemi mentre un altro suo modulo dialoghi con uno solo andrebbe perso, perché tutte le integrazioni risulterebbero appese all'applicativo intero.
+Lo **`scope`** classifica la natura dell'applicativo rispetto alla Regione:
+
+- `interno` — sviluppato o gestito dalla Regione o da un suo fornitore diretto tramite contratto (es. SibarDoc, SUPAE)
+- `nazionale` — sistema della PA nazionale con cui la Regione si integra ma che non gestisce direttamente (es. PagoPA, ANPR, SPID, NoiPA)
+- `privato` — SaaS o sistema di terze parti non PA, con contratto commerciale diretto (es. Microsoft 365, Zimbra)
+
+La tabella seguente descrive la compilabilità degli attributi in base allo `scope`:
+
+| Attributo | `interno` | `nazionale` | `privato` |
+|---|---|---|---|
+| **Fornitore** | obbligatorio | non applicabile | obbligatorio |
+| **Contratto** | obbligatorio | non applicabile | obbligatorio |
+| **Moduli** | obbligatori e navigabili | opzionali | opzionali |
+| **Requisiti** | obbligatori e navigabili | non applicabili | opzionali |
+| **Integrazioni** | sempre presenti | sempre presenti | sempre presenti |
+| **Dominio** | obbligatorio | obbligatorio | obbligatorio |
+
+Per i sistemi `nazionale`, Fornitore e Contratto sono **non applicabili** — non sono campi vuoti per dimenticanza, ma attributi privi di significato per quella categoria: sistemi come PagoPA non hanno un contratto con la Regione né un fornitore gestibile dalla Regione stessa. Ciò che interessa mappare è esclusivamente come i sistemi regionali vi si connettono, informazione che risiede nelle Integrazioni. I **Moduli** sono opzionali per `nazionale` e `privato` perché la Regione può conoscerne la struttura interna con sufficiente granularità da volerla rappresentare (es. distinguere il modulo notifiche di PagoPA dal modulo pagamenti), mantenendo così la granularità nelle integrazioni **modulo→modulo** anche verso sistemi esterni. I **Requisiti** sono opzionali per `privato` perché possono esistere requisiti di configurazione o personalizzazione contrattuale anche su sistemi SaaS. Le **Integrazioni** sono sempre presenti su tutti gli scope: il valore informativo per la Regione sta esattamente nel *come ci si connette*, indipendentemente da chi possiede il sistema.
+
+Un applicativo può vivere in più contratti contemporaneamente, perché può essere frammentato per dominio o per competenze (esempio: un contratto per la progettazione UI/UX e un altro per la realizzazione del front-end). Il fornitore di un applicativo non è un dato diretto: si deriva dall'insieme dei contratti collegati, e può quindi risultare più di uno.
+
+Lo **slug** è un identificatore tecnico stabile, generato automaticamente al momento della creazione a partire dal nome (es. `sibar-documentale`), composto da caratteri alfanumerici minuscoli e trattini. È modificabile solo in fase di creazione; dopo il salvataggio diventa immutabile e non è esposto nei form di modifica. È visibile nella pagina di dettaglio come campo in sola lettura con pulsante "copia". Serve per l'integrazione con sistemi esterni come Backstage.
+
+Un applicativo può inoltre essere articolato in **moduli** (vedi sotto).
+
+**Modulo** — una parte funzionale distinta di un applicativo (esempio: il modulo gateway che espone i servizi di protocollazione di SibarDoc, o il modulo identity provider dello stesso applicativo). Campi: nome, descrizione, applicativo di appartenenza, e uno **slug** — identificatore tecnico stabile generato alla creazione, non modificabile tramite UI dopo il salvataggio, necessario per il riferimento univoco nelle integrazioni con sistemi esterni. Un modulo appartiene sempre a **un solo applicativo**, ma le sue integrazioni possono puntare verso altri applicativi o loro moduli: è così che, per esempio, l'identity provider di SibarDoc resta un suo modulo pur essendo usato da molti altri applicativi che vi si integrano. La modularità è ciò che rende leggibile "chi parla con chi": senza di essa, il fatto che il gateway di un applicativo dialoghi con decine di sistemi mentre un altro suo modulo dialoghi con uno solo andrebbe perso, perché tutte le integrazioni risulterebbero appese all'applicativo intero.
 
 Ogni applicativo possiede sempre un **livello di default coincidente con l'applicativo stesso**, che ospita i requisiti e le integrazioni non ancora attribuiti a un modulo specifico. I moduli sono opzionali e aggiuntivi: in fase di prima compilazione tutto può stare sul livello di default, e requisiti o integrazioni si possono **spostare** su un modulo in un secondo momento. In altre parole, un requisito o un'integrazione appartiene sempre a un applicativo, e opzionalmente a uno dei suoi moduli; quando il modulo non è indicato, resta sul livello di default dell'applicativo.
 
@@ -50,11 +77,11 @@ Alla creazione di un'integrazione, lo strumento deve poter **generare anche un r
 
 Lo strumento offre due viste sullo stesso insieme di dati, alternabili in qualsiasi momento.
 
-La **vista a griglia** mostra gli applicativi come tessere. Ogni tessera riporta il nome, il dominio con l'evidenza visiva del suo **ambito** (verticale/trasversale) e della sua **criticità** (badge "CORE" quando il dominio è core), il fornitore (derivato dai contratti), i contratti collegati, una sintesi visiva dello stato dei suoi requisiti e degli indicatori quando l'applicativo contiene requisiti condivisi o integrazioni. Aprendo una tessera si accede al dettaglio completo dell'applicativo.
+La **vista a griglia** mostra gli applicativi come tessere. Ogni tessera riporta il nome, il dominio con l'evidenza visiva del suo **ambito** (verticale/trasversale) e della sua **criticità** (badge "CORE" quando il dominio è core), il fornitore (derivato dai contratti), i contratti collegati, una sintesi visiva dello stato dei suoi requisiti e degli indicatori quando l'applicativo contiene requisiti condivisi o integrazioni. Sulla tessera è visibile anche il badge **`scope`** dell'applicativo (`interno` / `nazionale` / `privato`), con colore o stile distinto per tipo, utilizzabile come filtro nella barra sopra la vista. Aprendo una tessera si accede al dettaglio completo dell'applicativo.
 
 Sopra le viste sono disponibili filtri e una ricerca testuale. I filtri per dominio, fornitore e contratto devono elencare **solo i valori effettivamente in uso** — per esempio, tra i domini vanno mostrati unicamente quelli associati ad almeno un applicativo, non l'intero elenco dei domini censiti — così da non affollare l'interfaccia con opzioni che non filtrerebbero nulla. La **ricerca e i filtri devono coprire qualsiasi entità**, non solo l'applicativo: digitando un testo si devono trovare anche moduli, requisiti, integrazioni, fornitori, contratti e domini che vi corrispondono, con un rimando che porti all'applicativo (e, se pertinente, al modulo) a cui appartengono.
 
-La **vista a mappa** dispone gli applicativi come nodi di un grafo con posizionamento automatico, dove i nodi più connessi tendono a collocarsi al centro. Il layout deve **minimizzare per quanto possibile gli incroci tra archi**: non è un vincolo assoluto (grafi molto connessi possono non essere disegnabili senza alcun incrocio), ma un obiettivo di leggibilità da perseguire con l'algoritmo di posizionamento e, dove utile, con archi curvi che aggirano i nodi. Ogni nodo deve rendere evidente l'**ambito** e la **criticità core** del dominio dell'applicativo, con lo stesso badge/etichetta usato sulla tessera, così che il tipo si colga anche dalla mappa. Gli archi rappresentano due tipi di relazione, distinguibili a colpo d'occhio: le **integrazioni tecniche** (orientate, colorate secondo il tipo di integrazione) e le **sovrapposizioni di requisiti** (non orientate, con uno stile visivamente distinto da quello delle integrazioni). Gli archi di integrazione devono comunicare la **direzionalità** (da chi verso chi) tramite un'**animazione di scorrimento** lungo l'arco — ad esempio un gradiente o un tratteggio che si muove nel verso dell'integrazione — così che il flusso sia leggibile anche quando gli archi sono numerosi. Su ogni arco di integrazione lo **stato** dev'essere reso evidente — ad esempio con un indicatore colorato lungo l'arco — così che si veda immediatamente se l'integrazione è presente, in sviluppo o in backlog. Selezionando un nodo, le connessioni di quel nodo vengono messe in risalto rispetto al resto e si apre il pannello di dettaglio dell'applicativo.
+La **vista a mappa** dispone gli applicativi come nodi di un grafo con posizionamento automatico, dove i nodi più connessi tendono a collocarsi al centro. Il layout deve **minimizzare per quanto possibile gli incroci tra archi**: non è un vincolo assoluto (grafi molto connessi possono non essere disegnabili senza alcun incrocio), ma un obiettivo di leggibilità da perseguire con l'algoritmo di posizionamento e, dove utile, con archi curvi che aggirano i nodi. Ogni nodo deve rendere evidente l'**ambito** e la **criticità core** del dominio dell'applicativo, con lo stesso badge/etichetta usato sulla tessera, così che il tipo si colga anche dalla mappa. I nodi con `scope = nazionale` o `scope = privato` sono visivamente distinguibili dagli applicativi interni — ad esempio tramite bordo tratteggiato o colore del nodo dedicato — per comunicare immediatamente che si tratta di sistemi non governati direttamente dalla Regione. Gli archi rappresentano due tipi di relazione, distinguibili a colpo d'occhio: le **integrazioni tecniche** (orientate, colorate secondo il tipo di integrazione) e le **sovrapposizioni di requisiti** (non orientate, con uno stile visivamente distinto da quello delle integrazioni). Gli archi di integrazione devono comunicare la **direzionalità** (da chi verso chi) tramite un'**animazione di scorrimento** lungo l'arco — ad esempio un gradiente o un tratteggio che si muove nel verso dell'integrazione — così che il flusso sia leggibile anche quando gli archi sono numerosi. Su ogni arco di integrazione lo **stato** dev'essere reso evidente — ad esempio con un indicatore colorato lungo l'arco — così che si veda immediatamente se l'integrazione è presente, in sviluppo o in backlog. Selezionando un nodo, le connessioni di quel nodo vengono messe in risalto rispetto al resto e si apre il pannello di dettaglio dell'applicativo.
 
 Nella prima vista d'insieme la mappa mostra gli applicativi, non i moduli, per non sovraccaricare il quadro. I **moduli compaiono in drill-down**: cliccando su un applicativo, la mappa cambia scena per dedicarsi al dettaglio di quell'applicativo. In questa modalità di dettaglio:
 
@@ -89,7 +116,7 @@ Tutte le entità devono essere creabili, **modificabili in qualsiasi momento** e
 
 La modificabilità vale per **tutte** le entità senza eccezioni, applicativo compreso: dev'essere possibile aggiornare da front-end nome, dominio, contratti collegati e moduli di un applicativo già creato, non solo crearlo. In particolare:
 
-- Nella creazione di un applicativo si indica il **dominio** (per nome, scelto o creato al volo) e uno o più contratti; deve essere possibile creare un nuovo dominio o un nuovo contratto al volo, senza interrompere l'operazione. Aprire la creazione di un contratto (o di un dominio) **non deve chiudere né scartare la maschera dell'applicativo in corso di compilazione**: la creazione dell'entità collegata si apre sopra, e al ritorno la maschera dell'applicativo dev'essere ancora presente con i dati già inseriti (nome, dominio) e con la nuova entità appena creata già disponibile e preferibilmente preselezionata. Il tipo del dominio scelto (**ambito** verticale/trasversale e **criticità** core/non core) dev'essere reso evidente **visivamente sull'applicativo**, tramite un badge o un'etichetta colorata visibile sia sulla tessera nella vista a griglia sia sul nodo nella vista a mappa (per esempio un'etichetta "CORE" e una indicazione "Trasversale"/"Verticale"), così che la natura di governance del dominio si colga a colpo d'occhio senza aprire il dettaglio.
+- Nella creazione di un applicativo si indica il **dominio** (per nome, scelto o creato al volo), lo **`scope`** (`interno`, `nazionale`, `privato`) e uno o più contratti (solo se `scope` lo prevede). Deve essere possibile creare un nuovo dominio o un nuovo contratto al volo, senza interrompere l'operazione. Aprire la creazione di un contratto (o di un dominio) **non deve chiudere né scartare la maschera dell'applicativo in corso di compilazione**: la creazione dell'entità collegata si apre sopra, e al ritorno la maschera dell'applicativo dev'essere ancora presente con i dati già inseriti (nome, dominio) e con la nuova entità appena creata già disponibile e preferibilmente preselezionata. Il tipo del dominio scelto (**ambito** verticale/trasversale e **criticità** core/non core) dev'essere reso evidente **visivamente sull'applicativo**, tramite un badge o un'etichetta colorata visibile sia sulla tessera nella vista a griglia sia sul nodo nella vista a mappa (per esempio un'etichetta "CORE" e una indicazione "Trasversale"/"Verticale"), così che la natura di governance del dominio si colga a colpo d'occhio senza aprire il dettaglio. In base al valore di `scope` selezionato, il form mostra o nasconde dinamicamente i campi Fornitore, Contratto e Requisiti: per `scope = nazionale` questi campi non compaiono (non sono vuoti, sono assenti); per `scope = privato` il campo Requisiti compare ma non è obbligatorio. Lo `scope` è modificabile dopo la creazione, con avviso esplicito sulle conseguenze (es. la rimozione dei contratti collegati se si passa da `interno` a `nazionale`). Lo **slug** viene generato automaticamente dal sistema a partire dal nome inserito e mostrato in anteprima nel form prima del salvataggio; è modificabile solo in fase di creazione, dopo il quale diventa immutabile.
 - Nella creazione di un contratto si inseriscono nome, fornitore/RTI, date, e le liste di CIG e CUP; deve essere possibile creare un nuovo fornitore al volo. Un contratto già creato dev'essere **modificabile in qualsiasi momento** (nome, fornitore, date, CIG, CUP), non solo al momento della creazione.
 - L'**associazione tra applicativo e contratti dev'essere editabile dopo la creazione**, in modo che si possa collegare un contratto già esistente a un applicativo già esistente (e scollegarlo), senza doverli ricreare. Poiché il legame è molti-a-molti, dev'essere gestibile da entrambi i lati: modificando l'applicativo si aggiungono o rimuovono i suoi contratti, e un contratto può essere associato a più applicativi.
 - Un applicativo deve poter avere **moduli**, creabili e modificabili; requisiti e integrazioni devono poter essere **spostati** dal livello di default dell'applicativo a un suo modulo (e viceversa) in qualsiasi momento.
@@ -104,7 +131,33 @@ Quando un requisito viene collegato a un altro, entrambi gli applicativi coinvol
 
 ### Esportazione
 
-Lo strumento deve permettere di **esportare** i dati correnti in JSON, come backup del lavoro di popolamento e come base per un futuro export verso Backstage. In questa fase di POC non è prevista alcuna funzione di importazione: i dati si inseriscono direttamente dall'interfaccia. L'importazione da file (Excel/JSON) è rimandata a una fase successiva, quando ci sarà una massa di dati preesistenti da caricare.
+Lo strumento deve permettere di **esportare** i dati correnti in JSON, come backup del lavoro di popolamento.
+
+È inoltre prevista una funzionalità di **export verso Backstage** ([backstage.io](https://backstage.io)), il software catalog open source che produce file YAML conformi al formato *Backstage Catalog Descriptor*. Il flusso è unidirezionale: la mappa applicativa è il **system of record** e Backstage è un consumer in sola lettura — Backstage non scrive mai sulla mappa.
+
+**Regole di filtro per l'export verso Backstage:**
+
+- Vengono esportati solo gli **Applicativi con `scope = interno`**; i sistemi `nazionale` e `privato` restano esclusivamente nella mappa come contesto di governance e non hanno significato nel catalogo tecnico interno.
+- Vengono esportati i **Moduli** degli applicativi inclusi nell'export.
+- Vengono esportati i **Domini** (Backstage ha nativamente questo concetto con identico significato).
+- Vengono esportati i **Fornitori** associati ad almeno un applicativo incluso nell'export.
+- Vengono esportate le **Integrazioni** tra applicativi `interno`, se esprimono un'interfaccia formale definita.
+
+**Mapping delle entità verso Backstage:**
+
+| Nostra entità | Entità Backstage |
+|---|---|
+| **Applicativo** (`interno`) | `System` |
+| **Modulo** (di applicativo `interno`) | `Component` |
+| **Dominio** | `Domain` |
+| **Fornitore** | `Group` (tipo `vendor`) |
+| **Integrazione** (tra `interno`) | `API` + relazione |
+
+Ogni entità esportata è identificata dal proprio **slug** nel formato `kind/namespace/name` atteso da Backstage (es. `system:regione-sardegna/sibar-documentale`).
+
+**Modalità di export nella UI:** l'export è accessibile dalla pagina di dettaglio del singolo Applicativo (export del sistema e dei suoi moduli) e da una sezione dedicata "Esportazioni" per l'export completo di tutti gli applicativi `interno`. L'export produce un archivio `.zip` contenente i file YAML pronti per essere caricati nel catalogo Backstage.
+
+In questa fase di POC non è prevista alcuna funzione di importazione né di sincronizzazione automatica con Backstage: i dati si inseriscono direttamente dall'interfaccia e l'export è manuale su richiesta. L'importazione da file (Excel/JSON) è rimandata a una fase successiva, quando ci sarà una massa di dati preesistenti da caricare.
 
 ## Requisiti non funzionali e vincoli tecnici
 
@@ -113,13 +166,13 @@ I seguenti punti sono vincolanti perché legati a scelte già prese o all'ambien
 - **Persistenza**: i dati vivono in un database persistente, non nello storage del browser; sopravvivono a refresh, dispositivi e sessioni diverse.
 - **Autenticazione**: accesso protetto tramite **social login Google**, ristretto agli account del dominio email `@aicof.it`. Chi non appartiene al dominio autorizzato non deve poter accedere.
 - **Hosting**: deploy su **Vercel**, da repository **GitHub** (nome progetto: `mappa-applicativa`).
-- **Compatibilità futura**: il modello dati deve poter essere esportato verso Backstage in un secondo momento; non è richiesta alcuna integrazione runtime con Backstage in questa fase.
+- **Integrazione con Backstage**: il modello dati è allineato al formato *Backstage Catalog Descriptor* e supporta l'export manuale verso Backstage tramite file YAML (vedi sezione Esportazione). Il flusso è unidirezionale — mappa → Backstage — e l'export è manuale su richiesta. La sincronizzazione automatica (webhook, polling) è fuori scope per il POC.
 
 ## Fuori scope in questa fase (non-goal)
 
 - Multi-utente con ruoli e permessi granulari per dominio o fornitore: l'accesso è ristretto per dominio email, ma non c'è differenziazione di ruoli.
 - **Entità cliente e macro-aree**: le macro-aree della PA (PA Centrale, PA Locale, Sanità e Assistenza, Istruzione e Ricerca) non sono un attributo del dominio ma una caratteristica del **cliente**: un ente appartiene già per sua natura a una o più di queste aree, quindi classificarle sul dominio sarebbe ridondante. Andrebbero quindi modellate come attributo di un'entità cliente. In questa fase non esiste un'entità cliente nel modello (lo strumento è pensato per un singolo cliente alla volta) e non la si introduce, per semplicità; macro-aree ed entità cliente restano quindi fuori scope, da valutare solo se lo strumento dovesse un giorno servire più clienti.
-- Sincronizzazione automatica o integrazione runtime con Backstage.
+- **Sincronizzazione automatica con Backstage**: l'export verso Backstage è manuale su richiesta (vedi sezione Esportazione); webhook, polling e sincronizzazione continua sono rimandati a una fase successiva.
 - Storico delle modifiche (chi ha cambiato cosa e quando): utile in una fase di uso condiviso, non necessario ora.
 - Esportazione della mappa come immagine o documento stampabile: desiderabile in seguito per le presentazioni, non richiesto in questa fase.
 - **Importazione da file** (Excel o JSON): rimandata a quando ci sarà una massa di dati preesistenti da caricare; nella POC i dati si inseriscono a mano dall'interfaccia.
@@ -133,6 +186,16 @@ Due avvertenze sulla qualità del dato, importanti per l'uso: i **codici COFOG**
 ## Registro delle modifiche
 
 Questo registro elenca le modifiche significative alla specifica, in modo che chi realizza (Claude Code) possa allineare il codice esistente ai soli cambiamenti recenti, senza rileggere l'intero documento. La voce più recente è in cima.
+
+**21 agosto 2026 — Allineamento C4 model, attributo `scope`, slug e integrazione Backstage**
+
+- **[MODELLO DATI — Principi]** Documentato l'allineamento con il C4 model ([c4model.com](https://c4model.com/)): Applicativo = *Software System*, Modulo = *Container*, Integrazione = *Relationship*, Dominio = *Domain* (concetto nativo di Backstage). La vista radice senza filtri corrisponde al *System Landscape* del C4 — non è un'entità del modello dati.
+- **[MODELLO DATI — Applicativo]** Introdotto l'attributo **`scope`** con valori `interno | nazionale | privato`. Lo scope determina la compilabilità degli altri attributi: Fornitore e Contratto sono non applicabili per `scope = nazionale`; Moduli e Requisiti sono opzionali per `scope = nazionale` e `privato`; le Integrazioni sono sempre presenti su tutti gli scope. Per i sistemi nazionali (es. PagoPA) la Regione non ha contratto né fornitore gestibile; il dato rilevante è come i sistemi regionali vi si connettono, informazione che risiede nelle Integrazioni.
+- **[MODELLO DATI — Applicativo e Modulo]** Introdotto il campo **`slug`**: identificatore tecnico stabile generato alla creazione a partire dal nome (alfanumerico minuscolo, trattini), modificabile solo al momento della creazione, immutabile dopo il salvataggio, visibile in sola lettura nella pagina di dettaglio. Necessario per l'integrazione con Backstage e con sistemi esterni.
+- **[INTEGRAZIONE — Backstage]** Definita la funzionalità di export verso Backstage: flusso unidirezionale mappa → Backstage, solo entità con `scope = interno`, mapping delle entità sul formato *Backstage Catalog Descriptor* (YAML), identificazione tramite slug. Export manuale su richiesta dalla pagina di dettaglio Applicativo e da sezione "Esportazioni". La sincronizzazione automatica rimane fuori scope per il POC.
+- **[UI — vista a griglia]** Il badge `scope` è visibile sulla tessera di ogni Applicativo e utilizzabile come filtro.
+- **[UI — vista a mappa]** I nodi con `scope = nazionale` e `scope = privato` sono visivamente distinti dagli applicativi interni (es. bordo tratteggiato o colore dedicato).
+- **[UI — form creazione Applicativo]** Il form mostra e nasconde dinamicamente i campi Fornitore, Contratto e Requisiti in base al valore di `scope` selezionato. Lo slug è generato in tempo reale e mostrato in anteprima prima del salvataggio.
 
 **13 agosto 2026 (aggiornamento 6 — ridefinizione strutturata)**
 
