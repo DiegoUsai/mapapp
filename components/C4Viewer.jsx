@@ -6,7 +6,15 @@ import { SCOPE_VALUES } from "./constants";
 let mermaidMod = null;
 
 function sanitize(s) {
-  return (s || "").replace(/"/g, "'").replace(/[<>]/g, "");
+  return (s || "")
+    .replace(/\r?\n/g, " ")
+    .replace(/"/g, "'")
+    .replace(/[<>{}]/g, "")
+    .replace(/[—–]/g, "-")
+    .replace(/#/g, "n.")
+    .replace(/;/g, ",")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function toAlias(entity) {
@@ -313,8 +321,10 @@ export function C4Viewer({ apps, integrations }) {
           }
         }
       } catch (err) {
+        console.error("C4 render error:", err.message, "\nDiagram:\n", diagram.def);
         if (!cancelled && containerRef.current) {
-          containerRef.current.innerHTML = `<pre style="color:#B5482B;font-size:13px">${err.message}</pre>`;
+          const escaped = diagram.def.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+          containerRef.current.innerHTML = `<div><pre style="color:#B5482B;font-size:13px;margin-bottom:12px">${err.message}</pre><details><summary style="cursor:pointer;font-size:12px;color:#8A8578">Mostra DSL generato</summary><pre style="font-size:11px;background:#F5F3EE;padding:8px;margin-top:8px;overflow:auto;max-height:300px">${escaped}</pre></details></div>`;
         }
       }
     })();
