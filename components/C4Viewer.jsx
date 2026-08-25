@@ -280,26 +280,35 @@ export function C4Viewer({ apps, integrations }) {
         containerRef.current.innerHTML = svg;
 
         const svgEl = containerRef.current.querySelector("svg");
-        if (svgEl && diagram.aliasMap) {
-          const groups = svgEl.querySelectorAll("g[id]");
-          groups.forEach((g) => {
-            const appId = diagram.aliasMap[g.id];
-            if (!appId) return;
-            g.style.cursor = "pointer";
-            g.addEventListener("click", (e) => {
-              e.stopPropagation();
-              if (level === "landscape") {
-                navigateTo("context", appId);
-              } else if (level === "context") {
-                const clickedApp = apps.find((a) => a.id === appId);
-                if (clickedApp?.modules?.length) {
-                  navigateTo("container", appId);
-                } else {
-                  navigateTo("context", appId);
-                }
-              }
-            });
+        if (svgEl) {
+          svgEl.querySelectorAll("text, tspan").forEach((el) => {
+            const t = el.textContent?.trim();
+            if (t === "[Software System]" || t === "[ENTERPRISE]" || t === "[Container]") {
+              el.textContent = "";
+            }
           });
+
+          if (diagram.aliasMap) {
+            const groups = svgEl.querySelectorAll("g[id]");
+            groups.forEach((g) => {
+              const appId = diagram.aliasMap[g.id];
+              if (!appId) return;
+              g.style.cursor = "pointer";
+              g.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (level === "landscape") {
+                  navigateTo("context", appId);
+                } else if (level === "context") {
+                  const clickedApp = apps.find((a) => a.id === appId);
+                  if (clickedApp?.modules?.length) {
+                    navigateTo("container", appId);
+                  } else {
+                    navigateTo("context", appId);
+                  }
+                }
+              });
+            });
+          }
         }
       } catch (err) {
         if (!cancelled && containerRef.current) {
@@ -349,6 +358,11 @@ export function C4Viewer({ apps, integrations }) {
           </div>
         )}
       </div>
+      <p className="mb-2 text-[11px]" style={{ color: "#B5B0A3" }}>
+        {level === "landscape" && "Click su un applicativo per vedere il contesto di integrazione."}
+        {level === "context" && "Click su un applicativo con moduli per vederne i container."}
+        {level === "container" && "Vista container: moduli interni e integrazioni."}
+      </p>
       <div
         ref={containerRef}
         className="overflow-auto rounded-lg border bg-white p-4"
