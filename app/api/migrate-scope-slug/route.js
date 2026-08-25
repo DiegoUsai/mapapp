@@ -26,7 +26,7 @@ function getScope(name) {
   return "interno";
 }
 
-export async function POST() {
+export async function GET() {
   const apps = await prisma.application.findMany();
   const modules = await prisma.module.findMany();
 
