@@ -98,6 +98,8 @@ model IntegrationType {
 model Application {
   id               String        @id @default(cuid())
   name             String
+  slug             String?       @unique
+  scope            String        @default("interno") // interno | nazionale | privato
   domainId         String
   domain           Domain        @relation(fields: [domainId], references: [id])
   contracts        Contract[]
@@ -111,6 +113,7 @@ model Application {
 model Module {
   id                String        @id @default(cuid())
   name              String
+  slug              String?       @unique
   description       String?
   applicationId     String
   application       Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)

@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { STATUS, DOMAIN_AMBITI, inputClass, inputStyle } from "./constants";
+import { STATUS, DOMAIN_AMBITI, SCOPE_VALUES, inputClass, inputStyle } from "./constants";
+import { toSlug } from "@/lib/slugify";
 import { Modal, Field, ComboAdd } from "./ui-primitives";
 import { COFOG_OPTIONS, cofogCleanLabel } from "@/lib/cofog";
 
@@ -122,15 +123,60 @@ export function NewDomainModal({ initial, onClose, onSave }) {
 
 export function NewAppModal({ domains, contracts, initial, onClose, onSave, onOpenNewDomain, onOpenNewContract }) {
   const [name, setName] = useState(initial?.name || "");
+  const [scope, setScope] = useState(initial?.scope || "interno");
+  const [slugDraft, setSlugDraft] = useState(initial?.slug || "");
+  const [slugTouched, setSlugTouched] = useState(false);
   const [domainId, setDomainId] = useState(initial?.domainId || domains[0]?.id || "");
   const [contractIds, setContractIds] = useState(initial?.contracts?.map((c) => c.id) || []);
+  const [confirmScope, setConfirmScope] = useState(null);
+  const isEdit = !!initial;
   const canSave = name.trim() && domainId;
   const toggleContract = (id) => setContractIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  const showContracts = scope !== "nazionale";
+
+  const handleNameChange = (val) => {
+    setName(val);
+    if (!isEdit && !slugTouched) setSlugDraft(toSlug(val));
+  };
+
+  const handleScopeChange = (newScope) => {
+    if (isEdit && newScope === "nazionale" && contractIds.length > 0) {
+      setConfirmScope(newScope);
+      return;
+    }
+    setScope(newScope);
+    if (newScope === "nazionale") setContractIds([]);
+  };
+
+  const confirmScopeChange = () => {
+    setScope(confirmScope);
+    setContractIds([]);
+    setConfirmScope(null);
+  };
+
   return (
-    <Modal title={initial ? "Modifica applicativo" : "Nuovo applicativo"} onClose={onClose}>
+    <Modal title={isEdit ? "Modifica applicativo" : "Nuovo applicativo"} onClose={onClose}>
       <div className="space-y-3">
         <Field label="Nome applicativo">
-          <input value={name} onChange={(e) => setName(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. Portale istanze online" />
+          <input value={name} onChange={(e) => handleNameChange(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. Portale istanze online" />
+        </Field>
+        {!isEdit && (
+          <Field label="Slug (identificativo tecnico)">
+            <input value={slugDraft} onChange={(e) => { setSlugDraft(e.target.value); setSlugTouched(true); }} className={inputClass} style={{ ...inputStyle, fontFamily: "monospace", fontSize: "12px" }} placeholder="auto-generato dal nome" />
+          </Field>
+        )}
+        {isEdit && initial?.slug && (
+          <Field label="Slug">
+            <div className="flex items-center gap-1.5">
+              <span className="rounded bg-[#F4F2ED] px-2 py-1 text-[12px] font-mono" style={{ color: "#6B655A" }}>{initial.slug}</span>
+              <button type="button" onClick={() => navigator.clipboard.writeText(initial.slug)} className="text-[11px] underline" style={{ color: "#8A8578" }}>Copia</button>
+            </div>
+          </Field>
+        )}
+        <Field label="Scope">
+          <select value={scope} onChange={(e) => handleScopeChange(e.target.value)} className={inputClass} style={inputStyle}>
+            {Object.entries(SCOPE_VALUES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+          </select>
         </Field>
         <Field label="Dominio">
           <select value={domainId} onChange={(e) => setDomainId(e.target.value)} className={inputClass} style={inputStyle}>
@@ -141,23 +187,34 @@ export function NewAppModal({ domains, contracts, initial, onClose, onSave, onOp
             <Plus size={12} /> Nuovo dominio
           </button>
         </Field>
-        <Field label="Contratti">
-          <div className="max-h-32 space-y-1 overflow-y-auto rounded-md border p-2" style={{ borderColor: "#D8D5CC" }}>
-            {contracts.length === 0 && <div className="text-[12.5px]" style={{ color: "#8A8578" }}>Nessun contratto disponibile</div>}
-            {contracts.map((c) => (
-              <label key={c.id} className="flex items-center gap-1.5 text-[13px]" style={{ color: "#3D3A34" }}>
-                <input type="checkbox" checked={contractIds.includes(c.id)} onChange={() => toggleContract(c.id)} />
-                {c.name} — {c.vendor.name}
-              </label>
-            ))}
+        {showContracts && (
+          <Field label="Contratti">
+            <div className="max-h-32 space-y-1 overflow-y-auto rounded-md border p-2" style={{ borderColor: "#D8D5CC" }}>
+              {contracts.length === 0 && <div className="text-[12.5px]" style={{ color: "#8A8578" }}>Nessun contratto disponibile</div>}
+              {contracts.map((c) => (
+                <label key={c.id} className="flex items-center gap-1.5 text-[13px]" style={{ color: "#3D3A34" }}>
+                  <input type="checkbox" checked={contractIds.includes(c.id)} onChange={() => toggleContract(c.id)} />
+                  {c.name} — {c.vendor.name}
+                </label>
+              ))}
+            </div>
+            <button type="button" onClick={onOpenNewContract} className="mt-1.5 flex items-center gap-1 text-[12.5px] font-medium underline underline-offset-2" style={{ color: "#6B655A" }}>
+              <Plus size={12} /> Nuovo contratto
+            </button>
+          </Field>
+        )}
+        {confirmScope && (
+          <div className="rounded-md border border-[#B5482B] bg-[#FFF5F3] p-3 text-[12.5px]" style={{ color: "#B5482B" }}>
+            Passando a &ldquo;{SCOPE_VALUES[confirmScope].label}&rdquo;, {contractIds.length} contratt{contractIds.length === 1 ? "o verrà scollegato" : "i verranno scollegati"}.
+            <div className="mt-2 flex gap-2">
+              <button onClick={confirmScopeChange} className="rounded px-2 py-1 text-[12px] font-medium text-white" style={{ backgroundColor: "#B5482B" }}>Procedi</button>
+              <button onClick={() => setConfirmScope(null)} className="text-[12px] underline" style={{ color: "#6B655A" }}>Annulla</button>
+            </div>
           </div>
-          <button type="button" onClick={onOpenNewContract} className="mt-1.5 flex items-center gap-1 text-[12.5px] font-medium underline underline-offset-2" style={{ color: "#6B655A" }}>
-            <Plus size={12} /> Nuovo contratto
-          </button>
-        </Field>
-        <button disabled={!canSave} onClick={() => canSave && onSave({ name: name.trim(), domainId, contractIds })}
+        )}
+        <button disabled={!canSave} onClick={() => canSave && onSave({ name: name.trim(), scope, domainId, contractIds: showContracts ? contractIds : [], ...(!isEdit && slugDraft ? { slug: slugDraft } : {}) })}
           className="mt-2 w-full rounded-md py-2 text-[13.5px] font-medium text-white disabled:opacity-40" style={{ backgroundColor: "#1B2430" }}>
-          {initial ? "Salva applicativo" : "Crea applicativo"}
+          {isEdit ? "Salva applicativo" : "Crea applicativo"}
         </button>
       </div>
     </Modal>
@@ -167,19 +224,33 @@ export function NewAppModal({ domains, contracts, initial, onClose, onSave, onOp
 export function NewModuleModal({ initial, onClose, onSave }) {
   const [name, setName] = useState(initial?.name || "");
   const [description, setDescription] = useState(initial?.description || "");
+  const isEdit = !!initial;
   const canSave = name.trim();
   return (
-    <Modal title={initial ? "Modifica modulo" : "Nuovo modulo"} onClose={onClose}>
+    <Modal title={isEdit ? "Modifica modulo" : "Nuovo modulo"} onClose={onClose}>
       <div className="space-y-3">
         <Field label="Nome modulo">
           <input autoFocus value={name} onChange={(e) => setName(e.target.value)} className={inputClass} style={inputStyle} placeholder="Es. Gateway di protocollazione" />
         </Field>
+        {!isEdit && name.trim() && (
+          <Field label="Slug (anteprima)">
+            <span className="text-[12px] font-mono" style={{ color: "#8A8578" }}>{toSlug(name)}</span>
+          </Field>
+        )}
+        {isEdit && initial?.slug && (
+          <Field label="Slug">
+            <div className="flex items-center gap-1.5">
+              <span className="rounded bg-[#F4F2ED] px-2 py-1 text-[12px] font-mono" style={{ color: "#6B655A" }}>{initial.slug}</span>
+              <button type="button" onClick={() => navigator.clipboard.writeText(initial.slug)} className="text-[11px] underline" style={{ color: "#8A8578" }}>Copia</button>
+            </div>
+          </Field>
+        )}
         <Field label="Descrizione (opzionale)">
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} className={inputClass} style={{ ...inputStyle, minHeight: 60 }} placeholder="Scopo e responsabilità del modulo" />
         </Field>
         <button disabled={!canSave} onClick={() => canSave && onSave({ name: name.trim(), description: description.trim() || null })}
           className="mt-2 w-full rounded-md py-2 text-[13.5px] font-medium text-white disabled:opacity-40" style={{ backgroundColor: "#1B2430" }}>
-          {initial ? "Salva modulo" : "Crea modulo"}
+          {isEdit ? "Salva modulo" : "Crea modulo"}
         </button>
       </div>
     </Modal>

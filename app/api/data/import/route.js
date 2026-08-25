@@ -29,19 +29,20 @@ export async function POST(req) {
     }
     for (const a of apps) {
       const contractIds = a.contractIds || (a.contractId ? [a.contractId] : []);
+      const appData = { name: a.name, domainId: a.domainId, scope: a.scope || "interno", slug: a.slug || null };
       await tx.application.upsert({
         where: { id: a.id },
-        update: { name: a.name, domainId: a.domainId, contracts: { set: contractIds.map((id) => ({ id })) } },
-        create: { id: a.id, name: a.name, domainId: a.domainId, contracts: { connect: contractIds.map((id) => ({ id })) } },
+        update: { ...appData, contracts: { set: contractIds.map((id) => ({ id })) } },
+        create: { id: a.id, ...appData, contracts: { connect: contractIds.map((id) => ({ id })) } },
       });
     }
-    // moduli (devono esistere prima dei requisiti che vi fanno riferimento)
     for (const a of apps) {
       for (const m of a.modules || []) {
+        const modData = { name: m.name, description: m.description || null, slug: m.slug || null };
         await tx.module.upsert({
           where: { id: m.id },
-          update: { name: m.name, description: m.description || null },
-          create: { id: m.id, name: m.name, description: m.description || null, applicationId: a.id },
+          update: modData,
+          create: { id: m.id, ...modData, applicationId: a.id },
         });
       }
     }

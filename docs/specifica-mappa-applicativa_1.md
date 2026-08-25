@@ -133,17 +133,15 @@ Quando un requisito viene collegato a un altro, entrambi gli applicativi coinvol
 
 Lo strumento deve permettere di **esportare** i dati correnti in JSON, come backup del lavoro di popolamento.
 
-È inoltre prevista una funzionalità di **export verso Backstage** ([backstage.io](https://backstage.io)), il software catalog open source che produce file YAML conformi al formato *Backstage Catalog Descriptor*. Il flusso è unidirezionale: la mappa applicativa è il **system of record** e Backstage è un consumer in sola lettura — Backstage non scrive mai sulla mappa.
+Sono previste tre funzionalità di export distinte, accessibili da una sezione dedicata "Esportazioni" e, per le prime due, anche dalla pagina di dettaglio del singolo Applicativo.
 
-**Regole di filtro per l'export verso Backstage:**
+---
 
-- Vengono esportati solo gli **Applicativi con `scope = interno`**; i sistemi `nazionale` e `privato` restano esclusivamente nella mappa come contesto di governance e non hanno significato nel catalogo tecnico interno.
-- Vengono esportati i **Moduli** degli applicativi inclusi nell'export.
-- Vengono esportati i **Domini** (Backstage ha nativamente questo concetto con identico significato).
-- Vengono esportati i **Fornitori** associati ad almeno un applicativo incluso nell'export.
-- Vengono esportate le **Integrazioni** tra applicativi `interno`, se esprimono un'interfaccia formale definita.
+**Export verso Backstage (YAML)**
 
-**Mapping delle entità verso Backstage:**
+Produce file YAML conformi al formato *Backstage Catalog Descriptor* ([backstage.io](https://backstage.io)). Il flusso è unidirezionale: la mappa è il **system of record**, Backstage è un consumer in sola lettura — non scrive mai sulla mappa.
+
+Regole di filtro: vengono esportati solo gli **Applicativi con `scope = interno`** (i sistemi `nazionale` e `privato` restano nella mappa come contesto di governance ma non appartengono al catalogo tecnico interno); i loro **Moduli**; i **Domini**; i **Fornitori** associati ad almeno un applicativo incluso; le **Integrazioni** tra applicativi `interno` che esprimono un'interfaccia formale.
 
 | Nostra entità | Entità Backstage |
 |---|---|
@@ -153,11 +151,44 @@ Lo strumento deve permettere di **esportare** i dati correnti in JSON, come back
 | **Fornitore** | `Group` (tipo `vendor`) |
 | **Integrazione** (tra `interno`) | `API` + relazione |
 
-Ogni entità esportata è identificata dal proprio **slug** nel formato `kind/namespace/name` atteso da Backstage (es. `system:regione-sardegna/sibar-documentale`).
+Ogni entità è identificata dal proprio **slug** nel formato `kind/namespace/name` (es. `system:regione-sardegna/sibar-documentale`). L'export produce un archivio `.zip` con i file YAML pronti per essere caricati in Backstage. La sincronizzazione automatica (webhook, polling) è fuori scope per il POC.
 
-**Modalità di export nella UI:** l'export è accessibile dalla pagina di dettaglio del singolo Applicativo (export del sistema e dei suoi moduli) e da una sezione dedicata "Esportazioni" per l'export completo di tutti gli applicativi `interno`. L'export produce un archivio `.zip` contenente i file YAML pronti per essere caricati nel catalogo Backstage.
+---
 
-In questa fase di POC non è prevista alcuna funzione di importazione né di sincronizzazione automatica con Backstage: i dati si inseriscono direttamente dall'interfaccia e l'export è manuale su richiesta. L'importazione da file (Excel/JSON) è rimandata a una fase successiva, quando ci sarà una massa di dati preesistenti da caricare.
+**Export diagrammi C4 (Structurizr DSL)**
+
+Produce un file testuale in formato **Structurizr DSL** ([docs.structurizr.com/dsl](https://docs.structurizr.com/dsl)), il formato standard di riferimento per il C4 model, creato dall'autore del modello stesso. Il DSL è leggibile da umani, versionabile in Git e compatibile con l'intero ecosistema di tool C4 (Structurizr Lite, Kroki, plugin IDE, etc.).
+
+La generazione avviene su tre livelli di vista, selezionabili al momento dell'export:
+
+- **System Landscape** — tutti gli applicativi dell'ecosistema, con le loro integrazioni dirette; filtrabili per `scope`
+- **System Context** — un singolo Applicativo con tutti i sistemi con cui si integra direttamente (vista di contesto)
+- **Container diagram** — un singolo Applicativo con i suoi Moduli e le integrazioni modulo→modulo
+
+Il DSL generato include: gli elementi (`softwareSystem`, `container`, `person` dove applicabile), le relazioni con tipo e descrizione, le viste richieste, e un tema di base coerente con la palette visiva dell'applicazione.
+
+L'export è disponibile dalla pagina di dettaglio del singolo Applicativo (per le viste System Context e Container) e dalla sezione "Esportazioni" (per il System Landscape completo). Produce un file `.dsl` scaricabile.
+
+---
+
+**Visualizzatore C4 integrato (Mermaid C4)**
+
+La mappa offre una **vista C4 interattiva** accessibile dall'interno dell'applicazione, distinta dalla vista a grafo force-directed. A differenza del grafo, che è ottimale per l'esplorazione dell'intero ecosistema, la vista C4 è ottimale per la **comunicazione e la documentazione**: produce diagrammi strutturati a box, leggibili e condivisibili, con navigazione tra i livelli.
+
+Il rendering è basato su **Mermaid** ([mermaid.js.org](https://mermaid.js.org)), libreria JavaScript open source attivamente mantenuta con supporto nativo C4. Il Structurizr DSL generato viene tradotto in sintassi Mermaid C4 al momento della visualizzazione — il DSL rimane il formato di persistenza, Mermaid è il motore di rendering.
+
+**Comportamento del visualizzatore:**
+
+- Accessibile da un tab "Vista C4" nella pagina di dettaglio di ogni Applicativo
+- La vista di default per un Applicativo è il **System Context diagram** (l'applicativo e i sistemi con cui si integra direttamente)
+- Dall'interno della vista, cliccando sull'Applicativo corrente si naviga al **Container diagram** (drill-down sui Moduli)
+- Cliccando su un Applicativo esterno (uno dei sistemi integrati) si naviga al suo System Context diagram
+- Un pulsante "Vista landscape" apre la vista dell'intero ecosistema filtrata per `scope` (default: solo `interno`)
+- Il badge `scope` è visibile su ogni elemento nel diagramma Mermaid (tramite etichetta o stile)
+
+**Limiti noti di Mermaid C4:** il layout è automatico e non configurabile manualmente; su ecosistemi con molti nodi la vista landscape può risultare densa. Per questa ragione la vista landscape è pensata come punto di ingresso da cui si drilla, non come vista di lavoro quotidiana — per quella rimane ottimale il grafo force-directed.
+
+In questa fase di POC non è prevista alcuna funzione di importazione: i dati si inseriscono direttamente dall'interfaccia. L'importazione da file (Excel/JSON) è rimandata a una fase successiva.
 
 ## Requisiti non funzionali e vincoli tecnici
 
@@ -174,7 +205,8 @@ I seguenti punti sono vincolanti perché legati a scelte già prese o all'ambien
 - **Entità cliente e macro-aree**: le macro-aree della PA (PA Centrale, PA Locale, Sanità e Assistenza, Istruzione e Ricerca) non sono un attributo del dominio ma una caratteristica del **cliente**: un ente appartiene già per sua natura a una o più di queste aree, quindi classificarle sul dominio sarebbe ridondante. Andrebbero quindi modellate come attributo di un'entità cliente. In questa fase non esiste un'entità cliente nel modello (lo strumento è pensato per un singolo cliente alla volta) e non la si introduce, per semplicità; macro-aree ed entità cliente restano quindi fuori scope, da valutare solo se lo strumento dovesse un giorno servire più clienti.
 - **Sincronizzazione automatica con Backstage**: l'export verso Backstage è manuale su richiesta (vedi sezione Esportazione); webhook, polling e sincronizzazione continua sono rimandati a una fase successiva.
 - Storico delle modifiche (chi ha cambiato cosa e quando): utile in una fase di uso condiviso, non necessario ora.
-- Esportazione della mappa come immagine o documento stampabile: desiderabile in seguito per le presentazioni, non richiesto in questa fase.
+- Esportazione della mappa come immagine o documento stampabile: desiderabile in seguito per le presentazioni, non richiesto in questa fase (l'export DSL e il visualizzatore Mermaid C4 coprono il caso d'uso documentativo).
+- **Sincronizzazione automatica del DSL con sistemi esterni**: la generazione del DSL è sempre on-demand, mai automatica in background.
 - **Importazione da file** (Excel o JSON): rimandata a quando ci sarà una massa di dati preesistenti da caricare; nella POC i dati si inseriscono a mano dall'interfaccia.
 
 ## Materiali a corredo
@@ -186,6 +218,12 @@ Due avvertenze sulla qualità del dato, importanti per l'uso: i **codici COFOG**
 ## Registro delle modifiche
 
 Questo registro elenca le modifiche significative alla specifica, in modo che chi realizza (Claude Code) possa allineare il codice esistente ai soli cambiamenti recenti, senza rileggere l'intero documento. La voce più recente è in cima.
+
+**24 agosto 2026 — Export Structurizr DSL e visualizzatore C4 integrato (Mermaid)**
+
+- **[FUNZIONALITÀ — Esportazione]** Aggiunta la funzionalità di export in **Structurizr DSL** ([docs.structurizr.com/dsl](https://docs.structurizr.com/dsl)): produce file `.dsl` su tre livelli di vista selezionabili (System Landscape, System Context, Container diagram). Disponibile dalla pagina di dettaglio Applicativo e dalla sezione "Esportazioni". Il DSL è il formato di persistenza e di interoperabilità con l'ecosistema C4; Backstage continua a usare il formato YAML separato.
+- **[FUNZIONALITÀ — Visualizzatore C4]** Aggiunto il **visualizzatore C4 integrato** basato su **Mermaid** ([mermaid.js.org](https://mermaid.js.org)): tab "Vista C4" nella pagina di dettaglio di ogni Applicativo, con navigazione interattiva tra System Context diagram e Container diagram (drill-down sui Moduli), e vista landscape filtrata per `scope`. Il DSL è il formato interno; Mermaid è il motore di rendering. Limite documentato: il layout Mermaid non è configurabile manualmente — per l'esplorazione dell'ecosistema rimane ottimale il grafo force-directed esistente.
+- **[FUORI SCOPE]** Aggiunte due voci esplicite: esportazione come immagine/documento stampabile (coperta da DSL + Mermaid) e sincronizzazione automatica del DSL con sistemi esterni (sempre on-demand).
 
 **21 agosto 2026 — Allineamento C4 model, attributo `scope`, slug e integrazione Backstage**
 

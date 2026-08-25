@@ -2,11 +2,20 @@
 
 ## Applicativo (Application)
 
-Sistema software gestito dalla PA (Regione Sardegna). Appartiene a esattamente un Dominio e può essere coperto da più Contratti contemporaneamente (relazione molti-a-molti). Contiene Moduli, Requisiti e Integrazioni.
+Sistema software mappato nell'ecosistema. Appartiene a esattamente un Dominio e può essere coperto da più Contratti contemporaneamente (relazione molti-a-molti). Contiene Moduli, Requisiti e Integrazioni.
+
+Ha uno **scope** che classifica la sua natura rispetto alla Regione:
+- `interno` — sviluppato o gestito dalla Regione o da un suo fornitore diretto
+- `nazionale` — sistema della PA nazionale con cui la Regione si integra ma che non gestisce (es. PagoPA, ANPR, P.A.R.E.R.)
+- `privato` — SaaS o sistema di terze parti non PA (es. Firma Aruba, PEC Aruba, Firma Namirial)
+
+Lo scope determina la compilabilità degli altri attributi: per `nazionale` Fornitore e Contratto sono non applicabili; per `privato` i Requisiti sono opzionali; le Integrazioni sono sempre presenti su tutti gli scope.
+
+Ha uno **slug**: identificatore tecnico stabile, generato alla creazione dal nome (kebab-case), immutabile dopo il salvataggio. Usato per l'integrazione con Backstage e sistemi esterni.
 
 ## Modulo (Module)
 
-Sotto-componente logico di un Applicativo. Serve a partizionare requisiti e integrazioni dentro l'applicativo. Un Modulo appartiene a un solo Applicativo. Eliminare un modulo non elimina i suoi requisiti e integrazioni: li sgancia (tornano a livello applicativo).
+Sotto-componente logico di un Applicativo. Serve a partizionare requisiti e integrazioni dentro l'applicativo. Un Modulo appartiene a un solo Applicativo. Eliminare un modulo non elimina i suoi requisiti e integrazioni: li sgancia (tornano a livello applicativo). Ha uno **slug** (come Application): identificatore tecnico stabile, immutabile dopo creazione.
 
 ## Dominio (Domain)
 

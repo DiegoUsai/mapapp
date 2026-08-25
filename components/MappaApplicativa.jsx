@@ -5,13 +5,14 @@ import * as XLSX from "xlsx";
 import { signOut } from "next-auth/react";
 import {
   Search, AlertTriangle, Layers, ChevronDown, ArrowLeftRight,
-  Network, LayoutGrid, Plus, Loader2, Upload, Download, FileSpreadsheet, LogOut,
+  Network, LayoutGrid, Plus, Loader2, Upload, Download, FileSpreadsheet, LogOut, Box,
 } from "lucide-react";
-import { STATUS, COLOR_PALETTE, TYPE_PALETTE, DOMAIN_AMBITI, AMBITO_COLORS, CORE_BADGE_BG } from "./constants";
+import { STATUS, COLOR_PALETTE, TYPE_PALETTE, DOMAIN_AMBITI, AMBITO_COLORS, CORE_BADGE_BG, SCOPE_VALUES } from "./constants";
 import { api, sharedOf, integrationsFor, vendorNamesOfApp, vendorIdsOfApp, contractsLabel } from "./data-helpers";
 import { Chip, StatusBar, Modal } from "./ui-primitives";
 import { NewContractModal, NewDomainModal, NewAppModal } from "./modals";
 import { AppDetailPanel } from "./AppDetailPanel";
+import { C4Viewer } from "./C4Viewer";
 
 function RelationMap({ apps, allApps, integrations, integrationTypes, selected, onSelect, ...panelProps }) {
   const width = 860;
@@ -19,7 +20,7 @@ function RelationMap({ apps, allApps, integrations, integrationTypes, selected, 
 
   const { nodes, links } = useMemo(() => {
     const appIds = new Set(apps.map((a) => a.id));
-    const rawNodes = apps.map((a) => ({ id: a.id, name: a.name, domain: a.domain }));
+    const rawNodes = apps.map((a) => ({ id: a.id, name: a.name, domain: a.domain, scope: a.scope }));
     const rawLinks = [];
     integrations.forEach((i) => {
       if (appIds.has(i.fromId) && appIds.has(i.toId))
@@ -104,6 +105,12 @@ function RelationMap({ apps, allApps, integrations, integrationTypes, selected, 
                   <circle r={30} fill={n.domain?.color || "#8791A0"} stroke={isSelected ? "#232019" : "#fff"} strokeWidth={isSelected ? 2.5 : 2} />
                   {n.domain?.core && (
                     <circle r={30} fill="none" stroke={CORE_BADGE_BG} strokeWidth="2" strokeDasharray="3,2" opacity="0.8" />
+                  )}
+                  {n.scope === "nazionale" && (
+                    <circle r={34} fill="none" stroke={SCOPE_VALUES.nazionale.color} strokeWidth="1.5" strokeDasharray="6,3" opacity="0.9" />
+                  )}
+                  {n.scope === "privato" && (
+                    <circle r={34} fill="none" stroke={SCOPE_VALUES.privato.color} strokeWidth="1.5" strokeDasharray="2,3" opacity="0.9" />
                   )}
                   <text textAnchor="middle" dy={4} fontSize="9.5" fontWeight="600" fill="#fff" style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
                     {n.name.length > 14 ? n.name.slice(0, 13) + "…" : n.name}
@@ -240,8 +247,9 @@ function toExportDataset(data) {
     contracts: data.contracts.map((c) => ({ id: c.id, name: c.name, vendorId: c.vendorId, startDate: c.startDate, endDate: c.endDate, cig: c.cig, cup: c.cup })),
     apps: data.applications.map((a) => ({
       id: a.id, name: a.name, domainId: a.domainId,
+      scope: a.scope || "interno", slug: a.slug || null,
       contractIds: a.contracts.map((c) => c.id),
-      modules: (a.modules || []).map((m) => ({ id: m.id, name: m.name, description: m.description || null })),
+      modules: (a.modules || []).map((m) => ({ id: m.id, name: m.name, description: m.description || null, slug: m.slug || null })),
       requirements: a.requirements.map((r) => ({
         id: r.id, name: r.name, status: r.status, externalId: r.externalId, externalSystem: r.externalSystem,
         moduleId: r.moduleId || null,
@@ -303,10 +311,20 @@ function ImportExportModal({ data, onClose, onImport }) {
       <div className="space-y-4">
           <div>
             <div className="mb-1.5 text-[12.5px] font-medium" style={{ color: "#232019" }}>Esporta</div>
-            <button onClick={() => downloadFile("mappa-applicativa.json", JSON.stringify(toExportDataset(data), null, 2), "application/json")}
-              className="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-[13px] font-medium" style={{ borderColor: "#D8D5CC", color: "#3D3A34" }}>
-              <Download size={14} /> Scarica i dati attuali in JSON
-            </button>
+            <div className="flex flex-col gap-2">
+              <button onClick={() => downloadFile("mappa-applicativa.json", JSON.stringify(toExportDataset(data), null, 2), "application/json")}
+                className="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-[13px] font-medium" style={{ borderColor: "#D8D5CC", color: "#3D3A34" }}>
+                <Download size={14} /> JSON completo
+              </button>
+              <button onClick={() => window.open("/api/export/backstage", "_blank")}
+                className="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-[13px] font-medium" style={{ borderColor: "#D8D5CC", color: "#3D3A34" }}>
+                <Download size={14} /> Backstage YAML (.zip)
+              </button>
+              <button onClick={async () => { const res = await fetch("/api/export/structurizr"); const text = await res.text(); downloadFile("workspace.dsl", text, "text/plain"); }}
+                className="flex w-full items-center justify-center gap-1.5 rounded-md border px-3 py-2 text-[13px] font-medium" style={{ borderColor: "#D8D5CC", color: "#3D3A34" }}>
+                <Download size={14} /> Structurizr DSL
+              </button>
+            </div>
           </div>
           <div className="border-t pt-4" style={{ borderColor: "#E2DFD6" }}>
             <div className="mb-1.5 text-[12.5px] font-medium" style={{ color: "#232019" }}>Importa</div>
@@ -338,6 +356,7 @@ export default function MappaApplicativa({ userEmail }) {
   const [vendorFilter, setVendorFilter] = useState(null);
   const [contractFilter, setContractFilter] = useState("");
   const [query, setQuery] = useState("");
+  const [scopeFilter, setScopeFilter] = useState(null);
   const [expanded, setExpanded] = useState(null);
   const [flash, setFlash] = useState(null);
   const [showNewApp, setShowNewApp] = useState(false);
@@ -393,6 +412,7 @@ export default function MappaApplicativa({ userEmail }) {
     if (domainFilter && app.domainId !== domainFilter) return false;
     if (vendorFilter && !vendorIdsOfApp(app).includes(vendorFilter)) return false;
     if (contractFilter && !app.contracts.some((c) => c.id === contractFilter)) return false;
+    if (scopeFilter && (app.scope || "interno") !== scopeFilter) return false;
     if (query && !matchesQuery(app, query)) return false;
     return true;
   });
@@ -503,6 +523,7 @@ export default function MappaApplicativa({ userEmail }) {
               <div className="flex gap-1 rounded-md border p-0.5" style={{ borderColor: "#D8D5CC" }}>
                 <button onClick={() => setView("map")} className="flex items-center gap-1.5 rounded px-2.5 py-1 text-[12.5px] font-medium" style={view === "map" ? { backgroundColor: "#1B2430", color: "#fff" } : { color: "#6B655A" }}><Network size={13} /> Mappa</button>
                 <button onClick={() => setView("grid")} className="flex items-center gap-1.5 rounded px-2.5 py-1 text-[12.5px] font-medium" style={view === "grid" ? { backgroundColor: "#1B2430", color: "#fff" } : { color: "#6B655A" }}><LayoutGrid size={13} /> Griglia</button>
+                <button onClick={() => setView("c4")} className="flex items-center gap-1.5 rounded px-2.5 py-1 text-[12.5px] font-medium" style={view === "c4" ? { backgroundColor: "#1B2430", color: "#fff" } : { color: "#6B655A" }}><Box size={13} /> C4</button>
               </div>
             </div>
           </div>
@@ -510,6 +531,12 @@ export default function MappaApplicativa({ userEmail }) {
             <span className="mr-1 text-[12px] font-medium uppercase tracking-wide" style={{ color: "#8A8578" }}>Fornitore</span>
             {vendorsInUse.map((v) => (
               <Chip key={v.id} active={vendorFilter === v.id} color="#1B2430" onClick={() => setVendorFilter(vendorFilter === v.id ? null : v.id)}>{v.name}</Chip>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="mr-1 text-[12px] font-medium uppercase tracking-wide" style={{ color: "#8A8578" }}>Scope</span>
+            {Object.entries(SCOPE_VALUES).map(([key, { label, color }]) => (
+              <Chip key={key} active={scopeFilter === key} color={color} onClick={() => setScopeFilter(scopeFilter === key ? null : key)}>{label}</Chip>
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-3 pt-1">
@@ -532,8 +559,8 @@ export default function MappaApplicativa({ userEmail }) {
               <Search size={14} className="absolute left-3 top-2.5" style={{ color: "#8A8578" }} />
               <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cerca…" className="w-full rounded-md border bg-white py-1.5 pl-8 pr-3 text-[13px] outline-none" style={{ borderColor: "#D8D5CC", color: "#3D3A34" }} />
             </div>
-            {(domainFilter || vendorFilter || contractFilter || query) && (
-              <button onClick={() => { setDomainFilter(null); setVendorFilter(null); setContractFilter(""); setQuery(""); }} className="text-[13px] font-medium underline underline-offset-2" style={{ color: "#6B655A" }}>
+            {(domainFilter || vendorFilter || contractFilter || scopeFilter || query) && (
+              <button onClick={() => { setDomainFilter(null); setVendorFilter(null); setContractFilter(""); setScopeFilter(null); setQuery(""); }} className="text-[13px] font-medium underline underline-offset-2" style={{ color: "#6B655A" }}>
                 Azzera filtri
               </button>
             )}
@@ -550,6 +577,8 @@ export default function MappaApplicativa({ userEmail }) {
           {data.integrationTypes.map((t) => (
             <span key={t.id} className="flex items-center gap-1.5"><ArrowLeftRight size={12} style={{ color: t.color }} /> {t.name}</span>
           ))}
+          <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full border-[1.5px]" style={{ borderColor: SCOPE_VALUES.nazionale.color, borderStyle: "dashed" }} /> Nazionale</span>
+          <span className="flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full border-[1.5px]" style={{ borderColor: SCOPE_VALUES.privato.color, borderStyle: "dotted" }} /> Privato</span>
         </div>
       </div>
 
@@ -559,6 +588,8 @@ export default function MappaApplicativa({ userEmail }) {
             <Layers size={22} className="mx-auto mb-2" style={{ color: "#B5B0A3" }} />
             <p className="text-[14px]" style={{ color: "#6B655A" }}>Nessun applicativo censito con questi filtri.</p>
           </div>
+        ) : view === "c4" ? (
+          <C4Viewer apps={data.applications} integrations={data.integrations} />
         ) : view === "map" ? (
           <RelationMap
             apps={filtered} allApps={data.applications}
@@ -592,6 +623,11 @@ export default function MappaApplicativa({ userEmail }) {
                             {app.domain.core && (
                               <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-white" style={{ backgroundColor: CORE_BADGE_BG }}>
                                 CORE
+                              </span>
+                            )}
+                            {app.scope && app.scope !== "interno" && (
+                              <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-white" style={{ backgroundColor: SCOPE_VALUES[app.scope]?.color || "#8791A0" }}>
+                                {SCOPE_VALUES[app.scope]?.label || app.scope}
                               </span>
                             )}
                           </div>
