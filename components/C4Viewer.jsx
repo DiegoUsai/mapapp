@@ -72,8 +72,8 @@ function buildLandscape(apps, integrations, scopeFilter) {
     lines.push(`    UpdateElementStyle(${toAlias(a)}, $bgColor="${bg}", $fontColor="#ffffff", $borderColor="${bg}")`);
   }
 
-  lines.push(`    UpdateLayoutConfig($c4ShapeInRow="4", $c4BoundaryInRow="1")`);
-  return { def: lines.join("\n"), aliasMap: Object.fromEntries(filtered.map((a) => [toAlias(a), a.id])) };
+  lines.push(`    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")`);
+  return { def: lines.join("\n"), nameMap: Object.fromEntries(filtered.map((a) => [a.name, a.id])) };
 }
 
 function buildContext(apps, integrations, appId) {
@@ -127,7 +127,7 @@ function buildContext(apps, integrations, appId) {
   }
 
   lines.push(`    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")`);
-  return { def: lines.join("\n"), aliasMap: Object.fromEntries(contextApps.map((a) => [toAlias(a), a.id])) };
+  return { def: lines.join("\n"), nameMap: Object.fromEntries(contextApps.map((a) => [a.name, a.id])) };
 }
 
 function buildContainerView(apps, integrations, appId) {
@@ -194,10 +194,10 @@ function buildContainerView(apps, integrations, appId) {
 
   lines.push(`    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")`);
 
-  const aliasMap = Object.fromEntries([
-    ...externalApps.map((a) => [toAlias(a), a.id]),
+  const nameMap = Object.fromEntries([
+    ...externalApps.map((a) => [a.name, a.id]),
   ]);
-  return { def: lines.join("\n"), aliasMap };
+  return { def: lines.join("\n"), nameMap };
 }
 
 export function C4Viewer({ apps, integrations }) {
@@ -288,13 +288,15 @@ export function C4Viewer({ apps, integrations }) {
             }
           });
 
-          if (diagram.aliasMap) {
-            const groups = svgEl.querySelectorAll("g[id]");
-            groups.forEach((g) => {
-              const appId = diagram.aliasMap[g.id];
+          if (diagram.nameMap) {
+            svgEl.querySelectorAll("text").forEach((textEl) => {
+              const name = textEl.textContent?.trim();
+              const appId = diagram.nameMap[name];
               if (!appId) return;
-              g.style.cursor = "pointer";
-              g.addEventListener("click", (e) => {
+              let box = textEl.closest("g.person-man, g.system-ext, g.system, g.container, g.boundary") || textEl.parentElement;
+              if (!box) return;
+              box.style.cursor = "pointer";
+              box.addEventListener("click", (e) => {
                 e.stopPropagation();
                 if (level === "landscape") {
                   navigateTo("context", appId);
