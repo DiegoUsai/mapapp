@@ -179,13 +179,17 @@ function buildContainerView(apps, integrations, appId) {
         }
       }
     } else if (i.fromId === appId || i.toId === appId) {
-      const from = appsById[i.fromId];
-      const to = appsById[i.toId];
-      if (!from || !to) continue;
-      const key = `${toAlias(from)}-${toAlias(to)}`;
+      const other = appsById[i.fromId === appId ? i.toId : i.fromId];
+      if (!other) continue;
+      const modId = i.fromId === appId ? i.fromModuleId : i.toModuleId;
+      const mod = modId ? target.modules.find((m) => m.id === modId) : target.modules[0];
+      if (!mod) continue;
+      const fromAlias = i.fromId === appId ? toAlias(mod) : toAlias(other);
+      const toAlias_ = i.fromId === appId ? toAlias(other) : toAlias(mod);
+      const key = `${fromAlias}-${toAlias_}`;
       if (!seen.has(key)) {
         seen.add(key);
-        lines.push(`    Rel(${toAlias(from)}, ${toAlias(to)}, "${sanitize(i.type?.name || "")}")`);
+        lines.push(`    Rel(${fromAlias}, ${toAlias_}, "${sanitize(i.type?.name || "")}")`);
       }
     }
   }
@@ -291,7 +295,7 @@ export function C4Viewer({ apps, integrations }) {
         if (svgEl) {
           svgEl.querySelectorAll("text, tspan").forEach((el) => {
             const t = el.textContent?.trim();
-            if (t === "[Software System]" || t === "[ENTERPRISE]" || t === "[Container]") {
+            if (t === "[Software System]" || t === "[ENTERPRISE]" || t === "[Container]" || t === "[SYSTEM]") {
               el.textContent = "";
             }
           });
