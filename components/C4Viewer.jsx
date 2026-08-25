@@ -31,6 +31,13 @@ function scopeColor(scope) {
   return SCOPE_VALUES[scope]?.color || SCOPE_VALUES.interno.color;
 }
 
+function scopeDesc(app) {
+  const scope = app.scope || "interno";
+  const label = SCOPE_VALUES[scope]?.label || scope;
+  const domain = app.domain?.name ? sanitize(app.domain.name) : "";
+  return domain ? `${domain} (${label})` : label;
+}
+
 function buildLandscape(apps, integrations, scopeFilter) {
   const filtered = scopeFilter
     ? apps.filter((a) => (a.scope || "interno") === scopeFilter)
@@ -48,16 +55,16 @@ function buildLandscape(apps, integrations, scopeFilter) {
   if (interno.length) {
     lines.push(`    Enterprise_Boundary(b_interno, "Applicativi interni") {`);
     for (const a of interno) {
-      lines.push(`        System(${toAlias(a)}, "${sanitize(a.name)}", "${sanitize(a.domain?.name || "")}")`);
+      lines.push(`        System(${toAlias(a)}, "${sanitize(a.name)}", "${scopeDesc(a)}")`);
     }
     lines.push("    }");
     lines.push("");
   }
   for (const a of nazionale) {
-    lines.push(`    System_Ext(${toAlias(a)}, "${sanitize(a.name)}", "Nazionale")`);
+    lines.push(`    System_Ext(${toAlias(a)}, "${sanitize(a.name)}", "${scopeDesc(a)}")`);
   }
   for (const a of privato) {
-    lines.push(`    System_Ext(${toAlias(a)}, "${sanitize(a.name)}", "Privato")`);
+    lines.push(`    System_Ext(${toAlias(a)}, "${sanitize(a.name)}", "${scopeDesc(a)}")`);
   }
   lines.push("");
 
@@ -84,7 +91,7 @@ function buildLandscape(apps, integrations, scopeFilter) {
   return { def: lines.join("\n"), nameMap: Object.fromEntries(filtered.map((a) => [a.name, a.id])) };
 }
 
-function buildContext(apps, integrations, appId) {
+function buildContext(apps, integrations, appId, scopeFilter) {
   const target = apps.find((a) => a.id === appId);
   if (!target) return null;
 
@@ -94,30 +101,34 @@ function buildContext(apps, integrations, appId) {
     if (i.toId === appId) connectedIds.add(i.fromId);
   });
 
-  const contextApps = apps.filter((a) => connectedIds.has(a.id));
+  let contextApps = apps.filter((a) => connectedIds.has(a.id));
+  if (scopeFilter) {
+    contextApps = contextApps.filter((a) => a.id === appId || (a.scope || "interno") === scopeFilter);
+  }
+  const contextIds = new Set(contextApps.map((a) => a.id));
   const appsById = Object.fromEntries(apps.map((a) => [a.id, a]));
 
   const lines = ["C4Context"];
   lines.push(`    title System Context — ${sanitize(target.name)}`);
   lines.push("");
 
-  lines.push(`    System(${toAlias(target)}, "${sanitize(target.name)}", "${sanitize(target.domain?.name || "")}")`);
+  lines.push(`    System(${toAlias(target)}, "${sanitize(target.name)}", "${scopeDesc(target)}")`);
   lines.push("");
 
   const others = contextApps.filter((a) => a.id !== appId);
   for (const a of others) {
     const scope = a.scope || "interno";
     if (scope === "interno") {
-      lines.push(`    System(${toAlias(a)}, "${sanitize(a.name)}", "${sanitize(a.domain?.name || "")}")`);
+      lines.push(`    System(${toAlias(a)}, "${sanitize(a.name)}", "${scopeDesc(a)}")`);
     } else {
-      lines.push(`    System_Ext(${toAlias(a)}, "${sanitize(a.name)}", "${SCOPE_VALUES[scope]?.label || scope}")`);
+      lines.push(`    System_Ext(${toAlias(a)}, "${sanitize(a.name)}", "${scopeDesc(a)}")`);
     }
   }
   lines.push("");
 
   const seen = new Set();
   for (const i of integrations) {
-    if (!connectedIds.has(i.fromId) || !connectedIds.has(i.toId)) continue;
+    if (!contextIds.has(i.fromId) || !contextIds.has(i.toId)) continue;
     const from = appsById[i.fromId];
     const to = appsById[i.toId];
     if (!from || !to) continue;
@@ -138,7 +149,7 @@ function buildContext(apps, integrations, appId) {
   return { def: lines.join("\n"), nameMap: Object.fromEntries(contextApps.map((a) => [a.name, a.id])) };
 }
 
-function buildContainerView(apps, integrations, appId) {
+function buildContainerView(apps, integrations, appId, scopeFilter) {
   const target = apps.find((a) => a.id === appId);
   if (!target || !target.modules?.length) return null;
 
@@ -160,9 +171,13 @@ function buildContainerView(apps, integrations, appId) {
     if (i.fromId === appId && i.toId !== appId) connectedIds.add(i.toId);
     if (i.toId === appId && i.fromId !== appId) connectedIds.add(i.fromId);
   });
-  const externalApps = apps.filter((a) => connectedIds.has(a.id));
+  let externalApps = apps.filter((a) => connectedIds.has(a.id));
+  if (scopeFilter) {
+    externalApps = externalApps.filter((a) => (a.scope || "interno") === scopeFilter);
+  }
+  const externalIds = new Set(externalApps.map((a) => a.id));
   for (const a of externalApps) {
-    lines.push(`    System_Ext(${toAlias(a)}, "${sanitize(a.name)}", "${SCOPE_VALUES[a.scope]?.label || "Interno"}")`);
+    lines.push(`    System_Ext(${toAlias(a)}, "${sanitize(a.name)}", "${scopeDesc(a)}")`);
   }
   lines.push("");
 
@@ -179,7 +194,9 @@ function buildContainerView(apps, integrations, appId) {
         }
       }
     } else if (i.fromId === appId || i.toId === appId) {
-      const other = appsById[i.fromId === appId ? i.toId : i.fromId];
+      const otherId = i.fromId === appId ? i.toId : i.fromId;
+      if (!externalIds.has(otherId)) continue;
+      const other = appsById[otherId];
       if (!other) continue;
       const modId = i.fromId === appId ? i.fromModuleId : i.toModuleId;
       const mod = modId ? target.modules.find((m) => m.id === modId) : target.modules[0];
@@ -250,8 +267,8 @@ export function C4Viewer({ apps, integrations }) {
 
   const diagram = React.useMemo(() => {
     if (level === "landscape") return buildLandscape(apps, integrations, scopeFilter);
-    if (level === "context" && selectedAppId) return buildContext(apps, integrations, selectedAppId);
-    if (level === "container" && selectedAppId) return buildContainerView(apps, integrations, selectedAppId);
+    if (level === "context" && selectedAppId) return buildContext(apps, integrations, selectedAppId, scopeFilter);
+    if (level === "container" && selectedAppId) return buildContainerView(apps, integrations, selectedAppId, scopeFilter);
     return buildLandscape(apps, integrations, scopeFilter);
   }, [apps, integrations, level, selectedAppId, scopeFilter]);
 
@@ -358,21 +375,19 @@ export function C4Viewer({ apps, integrations }) {
             </button>
           </React.Fragment>
         ))}
-        {level === "landscape" && (
-          <div className="ml-auto flex items-center gap-1.5">
-            <span className="text-[11px] uppercase tracking-wide" style={{ color: "#8A8578" }}>Scope:</span>
-            {[null, ...Object.keys(SCOPE_VALUES)].map((s) => (
-              <button
-                key={s || "all"}
-                onClick={() => setScopeFilter(s)}
-                className="rounded px-2 py-0.5 text-[11px] font-medium"
-                style={scopeFilter === s ? { backgroundColor: "#1B2430", color: "#fff" } : { color: "#6B655A", border: "1px solid #D8D5CC" }}
-              >
-                {s ? SCOPE_VALUES[s].label : "Tutti"}
-              </button>
-            ))}
-          </div>
-        )}
+        <div className="ml-auto flex items-center gap-1.5">
+          <span className="text-[11px] uppercase tracking-wide" style={{ color: "#8A8578" }}>Scope:</span>
+          {[null, ...Object.keys(SCOPE_VALUES)].map((s) => (
+            <button
+              key={s || "all"}
+              onClick={() => setScopeFilter(s)}
+              className="rounded px-2 py-0.5 text-[11px] font-medium"
+              style={scopeFilter === s ? { backgroundColor: "#1B2430", color: "#fff" } : { color: "#6B655A", border: "1px solid #D8D5CC" }}
+            >
+              {s ? SCOPE_VALUES[s].label : "Tutti"}
+            </button>
+          ))}
+        </div>
       </div>
       <p className="mb-2 text-[11px]" style={{ color: "#B5B0A3" }}>
         {level === "landscape" && "Click su un applicativo per vedere il contesto di integrazione."}
