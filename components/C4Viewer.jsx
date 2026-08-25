@@ -63,7 +63,7 @@ function buildLandscape(apps, integrations, scopeFilter) {
     const key = `${toAlias(from)}-${toAlias(to)}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    lines.push(`    Rel(${toAlias(from)}, ${toAlias(to)}, "${sanitize(i.label || "")}", "${sanitize(i.type?.name || "")}")`);
+    lines.push(`    Rel(${toAlias(from)}, ${toAlias(to)}, "${sanitize(i.type?.name || "")}")`);
   }
   lines.push("");
 
@@ -116,7 +116,7 @@ function buildContext(apps, integrations, appId) {
     const key = `${toAlias(from)}-${toAlias(to)}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    lines.push(`    Rel(${toAlias(from)}, ${toAlias(to)}, "${sanitize(i.label || "")}", "${sanitize(i.type?.name || "")}")`);
+    lines.push(`    Rel(${toAlias(from)}, ${toAlias(to)}, "${sanitize(i.type?.name || "")}")`);
   }
   lines.push("");
 
@@ -177,7 +177,7 @@ function buildContainerView(apps, integrations, appId) {
       const key = `${toAlias(from)}-${toAlias(to)}`;
       if (!seen.has(key)) {
         seen.add(key);
-        lines.push(`    Rel(${toAlias(from)}, ${toAlias(to)}, "${sanitize(i.label || "")}", "${sanitize(i.type?.name || "")}")`);
+        lines.push(`    Rel(${toAlias(from)}, ${toAlias(to)}, "${sanitize(i.type?.name || "")}")`);
       }
     }
   }
