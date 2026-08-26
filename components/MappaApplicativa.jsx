@@ -13,6 +13,7 @@ import { Chip, StatusBar, Modal } from "./ui-primitives";
 import { NewContractModal, NewDomainModal, NewAppModal } from "./modals";
 import { AppDetailPanel } from "./AppDetailPanel";
 import { C4Viewer } from "./C4Viewer";
+import posthog from "posthog-js";
 
 function RelationMap({ apps, allApps, integrations, integrationTypes, selected, onSelect, ...panelProps }) {
   const width = 860;
@@ -507,7 +508,11 @@ export default function MappaApplicativa({ userEmail }) {
             <div className="flex flex-wrap items-center gap-2">
               <span className="mr-1 text-[12px] font-medium uppercase tracking-wide" style={{ color: "#8A8578" }}>Dominio</span>
               {domainsInUse.map((d) => (
-                <Chip key={d.id} active={domainFilter === d.id} color={d.color} onClick={() => setDomainFilter(domainFilter === d.id ? null : d.id)}>{d.name}</Chip>
+                <Chip key={d.id} active={domainFilter === d.id} color={d.color} onClick={() => {
+                  const next = domainFilter === d.id ? null : d.id;
+                  setDomainFilter(next);
+                  posthog.capture("domain_filter clicked", { label: d.name, action: next ? "select" : "deselect" });
+                }}>{d.name}</Chip>
               ))}
               <button onClick={() => setShowNewDomain(true)} className="flex items-center gap-1 text-[12.5px] font-medium underline underline-offset-2" style={{ color: "#6B655A" }}>
                 <Plus size={12} /> Nuovo dominio
