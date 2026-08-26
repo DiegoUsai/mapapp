@@ -1,11 +1,12 @@
 "use client";
 import { SessionProvider } from "next-auth/react";
-import { PostHogProvider } from "./posthog";
+import { PostHogIdentify } from "./posthog";
 
 export default function Providers({ children }) {
   return (
     <SessionProvider>
-      <PostHogProvider>{children}</PostHogProvider>
+      <PostHogIdentify />
+      {children}
     </SessionProvider>
   );
 }
